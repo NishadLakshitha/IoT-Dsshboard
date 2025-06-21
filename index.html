@@ -53,7 +53,7 @@
 
         // --- MOCK DATA STRUCTURE ---
         const initialData = {
-            'Engineering Faculty': {
+            'ESP32 Sensor Hub': { // Changed default location name
                 current: {
                     parameters: [
                         { name: 'pH', value: '7.5', change: '+0.2%', isPositive: true, unit: '' },
@@ -65,7 +65,7 @@
                     alerts: [ { id: 1, type: 'Info', message: 'All systems normal.', time: '1 hour ago', severity: 'low' }],
                     reports: [ { name: 'Weekly Engineering Report', date: '2025-06-18', status: 'Generated' } ],
                 },
-                past: {
+                past: { // Past data is kept as mock data for now
                     'Last 24 Hours': {
                         parameters: [
                             { name: 'pH', value: '7.4', change: '+0.1%', isPositive: true, unit: '' },
@@ -77,218 +77,8 @@
                         alerts: [{ id: 2, type: 'Info', message: 'Minor fluctuation in pH levels overnight.', time: '18 hours ago', severity: 'low' }],
                         reports: []
                     },
-                    'Last 7 Days': {
-                        parameters: [
-                            { name: 'pH', value: '7.2', change: '-0.3%', isPositive: false, unit: '' },
-                            { name: 'Turbidity', value: '1.5', change: '+0.2%', isPositive: true, unit: 'NTU' },
-                            { name: 'TDS', value: '275', change: '+0.5%', isPositive: true, unit: 'ppm' },
-                            { name: 'Temperature', value: '22.5', change: '-0.2%', isPositive: false, unit: '°C' },
-                            { name: 'WQI', value: '86', change: '-0.5%', isPositive: false, unit: '' }
-                        ],
-                        alerts: [{ id: 3, type: 'Warning', message: 'TDS levels nearing upper threshold.', time: '3 days ago', severity: 'medium' }],
-                        reports: [{ name: 'Weekly Engineering Report', date: '2025-06-14', status: 'Generated' }]
-                    },
-                    'Last 30 Days': {
-                         parameters: [
-                            { name: 'pH', value: '7.0', change: '0%', isPositive: true, unit: '' },
-                            { name: 'Turbidity', value: '1.5', change: '+0.3%', isPositive: true, unit: 'NTU' },
-                            { name: 'TDS', value: '260', change: '-1.0%', isPositive: false, unit: 'ppm' },
-                            { name: 'Temperature', value: '22.0', change: '-0.5%', isPositive: false, unit: '°C' },
-                            { name: 'WQI', value: '84', change: '-1.2%', isPositive: false, unit: '' }
-                         ],
-                         alerts: [],
-                         reports: [{ name: 'Monthly Maintenance Report', date: '2025-05-30', status: 'Generated' }]
-                    },
-                    'Last 3 Months': {
-                        parameters: [
-                            { name: 'pH', value: '7.1', change: '+0.1%', isPositive: true, unit: '' },
-                            { name: 'Turbidity', value: '1.0', change: '-0.2%', isPositive: false, unit: 'NTU' },
-                            { name: 'TDS', value: '250', change: '-0.8%', isPositive: false, unit: 'ppm' },
-                            { name: 'Temperature', value: '21.5', change: '-0.3%', isPositive: false, unit: '°C' },
-                            { name: 'WQI', value: '85', change: '+1.2%', isPositive: true, unit: '' }
-                        ],
-                        alerts: [{ id: 4, type: 'Alert', message: 'Filter replacement performed.', time: '2 months ago', severity: 'high' }],
-                        reports: [{ name: 'Quarterly Review', date: '2025-04-01', status: 'Generated' }]
-                    }
                 }
             },
-            'Management Faculty': {
-                current: {
-                    parameters: [
-                        { name: 'pH', value: '7.1', change: '0.0%', isPositive: true, unit: '' },
-                        { name: 'Turbidity', value: '0.9', change: '+0.5%', isPositive: true, unit: 'NTU' },
-                        { name: 'TDS', value: '210', change: '-0.3%', isPositive: false, unit: 'ppm' },
-                        { name: 'Temperature', value: '24', change: '+0.2%', isPositive: true, unit: '°C' },
-                        { name: 'WQI', value: '92', change: '+1.1%', isPositive: true, unit: '' }
-                    ],
-                    alerts: [ { id: 101, type: 'Info', message: 'Stable conditions reported.', time: '2 hours ago', severity: 'low' }],
-                    reports: [ { name: 'Management Dept. Monthly', date: '2025-06-01', status: 'Generated' }],
-                },
-                past: {
-                    'Last 24 Hours': { 
-                        parameters: [
-                            { name: 'pH', value: '7.1', change: '0%', isPositive: true, unit: '' },
-                            { name: 'Turbidity', value: '0.9', change: '0%', isPositive: true, unit: 'NTU' },
-                            { name: 'TDS', value: '211', change: '+0.1%', isPositive: true, unit: 'ppm' },
-                            { name: 'Temperature', value: '23.9', change: '-0.1%', isPositive: false, unit: '°C' },
-                            { name: 'WQI', value: '92', change: '0%', isPositive: true, unit: '' }
-                        ], 
-                        alerts: [], 
-                        reports: [] 
-                    },
-                    'Last 7 Days': {
-                        parameters: [
-                            { name: 'pH', value: '7.0', change: '-0.1%', isPositive: false, unit: '' },
-                            { name: 'Turbidity', value: '1.0', change: '+0.1%', isPositive: true, unit: 'NTU' },
-                            { name: 'TDS', value: '208', change: '-0.2%', isPositive: false, unit: 'ppm' },
-                            { name: 'Temperature', value: '23.5', change: '-0.5%', isPositive: false, unit: '°C' },
-                            { name: 'WQI', value: '91', change: '-0.5%', isPositive: false, unit: '' }
-                        ],
-                        alerts: [],
-                        reports: []
-                    },
-                    'Last 30 Days': { 
-                        parameters: [
-                            { name: 'pH', value: '7.2', change: '+0.2%', isPositive: true, unit: '' },
-                            { name: 'Turbidity', value: '0.8', change: '-0.1%', isPositive: false, unit: 'NTU' },
-                            { name: 'TDS', value: '215', change: '+0.3%', isPositive: true, unit: 'ppm' },
-                            { name: 'Temperature', value: '23.0', change: '-0.4%', isPositive: false, unit: '°C' },
-                            { name: 'WQI', value: '93', change: '+0.8%', isPositive: true, unit: '' }
-                        ], 
-                        alerts: [], 
-                        reports: [] 
-                    },
-                    'Last 3 Months': { 
-                        parameters: [
-                            { name: 'pH', value: '7.3', change: '+0.1%', isPositive: true, unit: '' },
-                            { name: 'Turbidity', value: '0.7', change: '-0.2%', isPositive: false, unit: 'NTU' },
-                            { name: 'TDS', value: '205', change: '-0.5%', isPositive: false, unit: 'ppm' },
-                            { name: 'Temperature', value: '22.5', change: '-0.6%', isPositive: false, unit: '°C' },
-                            { name: 'WQI', value: '94', change: '+1.0%', isPositive: true, unit: '' }
-                        ], 
-                        alerts: [], 
-                        reports: [] 
-                    }
-                }
-            },
-            'Technology Faculty': {
-                current: {
-                    parameters: [
-                        { name: 'pH', value: '6.9', change: '-0.4%', isPositive: false, unit: '' },
-                        { name: 'Turbidity', value: '2.5', change: '+2.1%', isPositive: true, unit: 'NTU' },
-                        { name: 'TDS', value: '350', change: '+1.5%', isPositive: true, unit: 'ppm' },
-                        { name: 'Temperature', value: '21', change: '-0.8%', isPositive: false, unit: '°C' },
-                        { name: 'WQI', value: '81', change: '-1.5%', isPositive: false, unit: '' }
-                    ],
-                    alerts: [{ id: 201, type: 'Warning', message: 'Turbidity spike in Lab 3', time: '45 minutes ago', severity: 'medium' }],
-                    reports: [{ name: 'Tech Labs Water Analysis', date: '2025-06-20', status: 'In Progress' }],
-                },
-                past: {
-                    'Last 24 Hours': {
-                        parameters: [
-                            { name: 'pH', value: '7.0', change: '+0.1%', isPositive: true, unit: '' },
-                            { name: 'Turbidity', value: '2.2', change: '+1.0%', isPositive: true, unit: 'NTU' },
-                            { name: 'TDS', value: '345', change: '-0.5%', isPositive: false, unit: 'ppm' },
-                            { name: 'Temperature', value: '21.2', change: '+0.1%', isPositive: true, unit: '°C' },
-                            { name: 'WQI', value: '82', change: '+0.5%', isPositive: true, unit: '' }
-                        ],
-                        alerts: [{ id: 202, type: 'Info', message: 'Turbidity levels stabilized.', time: '8 hours ago', severity: 'low' }],
-                        reports: []
-                    },
-                    'Last 7 Days': { 
-                        parameters: [
-                            { name: 'pH', value: '6.8', change: '-0.2%', isPositive: false, unit: '' },
-                            { name: 'Turbidity', value: '1.8', change: '-0.5%', isPositive: false, unit: 'NTU' },
-                            { name: 'TDS', value: '330', change: '-1.0%', isPositive: false, unit: 'ppm' },
-                            { name: 'Temperature', value: '20.8', change: '-0.2%', isPositive: false, unit: '°C' },
-                            { name: 'WQI', value: '80', change: '-1.0%', isPositive: false, unit: '' }
-                        ], 
-                        alerts: [], 
-                        reports: [] 
-                    },
-                    'Last 30 Days': { 
-                        parameters: [
-                            { name: 'pH', value: '7.1', change: '+0.3%', isPositive: true, unit: '' },
-                            { name: 'Turbidity', value: '1.5', change: '-0.8%', isPositive: false, unit: 'NTU' },
-                            { name: 'TDS', value: '320', change: '-1.5%', isPositive: false, unit: 'ppm' },
-                            { name: 'Temperature', value: '20.5', change: '-0.3%', isPositive: false, unit: '°C' },
-                            { name: 'WQI', value: '83', change: '+1.2%', isPositive: true, unit: '' }
-                        ], 
-                        alerts: [], 
-                        reports: [] 
-                    },
-                    'Last 3 Months': { 
-                        parameters: [
-                            { name: 'pH', value: '7.2', change: '+0.2%', isPositive: true, unit: '' },
-                            { name: 'Turbidity', value: '1.2', change: '-1.0%', isPositive: false, unit: 'NTU' },
-                            { name: 'TDS', value: '300', change: '-2.0%', isPositive: false, unit: 'ppm' },
-                            { name: 'Temperature', value: '20.0', change: '-0.5%', isPositive: false, unit: '°C' },
-                            { name: 'WQI', value: '85', change: '+1.5%', isPositive: true, unit: '' }
-                        ], 
-                        alerts: [], 
-                        reports: [] 
-                    }
-                }
-            },
-            'Applied Faculty': {
-                current: {
-                    parameters: [
-                        { name: 'pH', value: '7.3', change: '+0.1%', isPositive: true, unit: '' },
-                        { name: 'Turbidity', value: '1.1', change: '-0.2%', isPositive: false, unit: 'NTU' },
-                        { name: 'TDS', value: '240', change: '+0.3%', isPositive: true, unit: 'ppm' },
-                        { name: 'Temperature', value: '22.5', change: '0.0%', isPositive: true, unit: '°C' },
-                        { name: 'WQI', value: '89', change: '+0.5%', isPositive: true, unit: '' }
-                    ],
-                    alerts: [{ id: 301, type: 'Info', message: 'Water quality optimal for experiments.', time: '3 hours ago', severity: 'low' }],
-                    reports: [ { name: 'Applied Sciences Quarterly', date: '2025-04-15', status: 'Generated' } ],
-                },
-                past: {
-                    'Last 24 Hours': { 
-                        parameters: [
-                            { name: 'pH', value: '7.3', change: '0%', isPositive: true, unit: '' },
-                            { name: 'Turbidity', value: '1.1', change: '0%', isPositive: true, unit: 'NTU' },
-                            { name: 'TDS', value: '241', change: '+0.1%', isPositive: true, unit: 'ppm' },
-                            { name: 'Temperature', value: '22.6', change: '+0.1%', isPositive: true, unit: '°C' },
-                            { name: 'WQI', value: '89', change: '0%', isPositive: true, unit: '' }
-                        ], 
-                        alerts: [], 
-                        reports: [] 
-                    },
-                    'Last 7 Days': { 
-                        parameters: [
-                            { name: 'pH', value: '7.2', change: '-0.1%', isPositive: false, unit: '' },
-                            { name: 'Turbidity', value: '1.2', change: '+0.1%', isPositive: true, unit: 'NTU' },
-                            { name: 'TDS', value: '238', change: '-0.2%', isPositive: false, unit: 'ppm' },
-                            { name: 'Temperature', value: '22.3', change: '-0.2%', isPositive: false, unit: '°C' },
-                            { name: 'WQI', value: '88', change: '-0.3%', isPositive: false, unit: '' }
-                        ], 
-                        alerts: [], 
-                        reports: [] 
-                    },
-                    'Last 30 Days': { 
-                        parameters: [
-                            { name: 'pH', value: '7.4', change: '+0.2%', isPositive: true, unit: '' },
-                            { name: 'Turbidity', value: '1.0', change: '-0.1%', isPositive: false, unit: 'NTU' },
-                            { name: 'TDS', value: '245', change: '+0.4%', isPositive: true, unit: 'ppm' },
-                            { name: 'Temperature', value: '22.0', change: '-0.3%', isPositive: false, unit: '°C' },
-                            { name: 'WQI', value: '90', change: '+0.6%', isPositive: true, unit: '' }
-                        ], 
-                        alerts: [], 
-                        reports: [] 
-                    },
-                    'Last 3 Months': { 
-                        parameters: [
-                            { name: 'pH', value: '7.5', change: '+0.1%', isPositive: true, unit: '' },
-                            { name: 'Turbidity', value: '0.9', change: '-0.2%', isPositive: false, unit: 'NTU' },
-                            { name: 'TDS', value: '235', change: '-0.4%', isPositive: false, unit: 'ppm' },
-                            { name: 'Temperature', value: '21.8', change: '-0.4%', isPositive: false, unit: '°C' },
-                            { name: 'WQI', value: '91', change: '+0.7%', isPositive: true, unit: '' }
-                        ], 
-                        alerts: [], 
-                        reports: [] 
-                    }
-                }
-            }
         };
 
         const App = () => {
@@ -302,11 +92,111 @@
           const [rotatingButton, setRotatingButton] = useState(null);
           
           const [locationsData, setLocationsData] = useState(initialData);
-          const [selectedLocation, setSelectedLocation] = useState('Engineering Faculty');
+          const [selectedLocation, setSelectedLocation] = useState('ESP32 Sensor Hub'); // Changed default location
           const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
 
           const [reports, setReports] = useState(locationsData[selectedLocation].current.reports);
           const [alerts, setAlerts] = useState(locationsData[selectedLocation].current.alerts);
+
+          // --- NEW: ThingSpeak Configuration ---
+          const thingSpeakConfig = {
+              channelId: '2971430', // <--- REPLACE with your Channel ID
+              apiKey: '7PNMHZTB6NP9MJ9F', // <--- REPLACE with your Read API Key
+              // Map your ThingSpeak fields to the parameter names in the dashboard
+              fieldMapping: {
+                  'field4': 'pH',
+                  'field3': 'Turbidity',
+                  'field2': 'TDS',
+                  'field1': 'Temperature',
+                  'field5': 'WQI',
+              }
+          };
+
+          // --- NEW: Function to fetch data from ThingSpeak ---
+          const fetchThingSpeakData = async () => {
+              if (dataType !== 'Current') return; // Only fetch for current data
+
+              const url = `https://api.thingspeak.com/channels/${thingSpeakConfig.channelId}/feeds.json?api_key=${thingSpeakConfig.apiKey}&results=1`;
+              
+              try {
+                  const response = await fetch(url);
+                  if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                  }
+                  const data = await response.json();
+                  const latestFeed = data.feeds[0];
+
+                  if (latestFeed) {
+                      setLocationsData(prevData => {
+                          const newParameters = prevData[selectedLocation].current.parameters.map(param => {
+                              const fieldName = Object.keys(thingSpeakConfig.fieldMapping).find(key => thingSpeakConfig.fieldMapping[key] === param.name);
+                              if (fieldName && latestFeed[fieldName]) {
+                                  // You might want to implement a more sophisticated change calculation
+                                  const oldValue = parseFloat(param.value);
+                                  const newValue = parseFloat(latestFeed[fieldName]);
+                                  const change = (((newValue - oldValue) / oldValue) * 100).toFixed(1);
+                                  
+                                  return {
+                                      ...param,
+                                      value: latestFeed[fieldName],
+                                      change: `${change > 0 ? '+' : ''}${change}%`,
+                                      isPositive: change >= 0,
+                                  };
+                              }
+                              return param;
+                          });
+                          
+                          // Create a simple alert based on a threshold
+                          const newAlerts = [];
+                          const turbidityValue = parseFloat(latestFeed[thingSpeakConfig.fieldMapping['Turbidity']]);
+                          if (turbidityValue > 4) { // Example threshold
+                              newAlerts.push({
+                                  id: new Date().getTime(),
+                                  type: 'Warning',
+                                  message: `High turbidity detected: ${turbidityValue} NTU`,
+                                  time: 'Just now',
+                                  severity: 'medium'
+                              });
+                          } else {
+                               newAlerts.push({
+                                  id: new Date().getTime(),
+                                  type: 'Info',
+                                  message: 'All systems normal.',
+                                  time: 'Just now',
+                                  severity: 'low'
+                              });
+                          }
+                          setAlerts(newAlerts);
+
+
+                          return {
+                              ...prevData,
+                              [selectedLocation]: {
+                                  ...prevData[selectedLocation],
+                                  current: {
+                                      ...prevData[selectedLocation].current,
+                                      parameters: newParameters,
+                                      alerts: newAlerts,
+                                  }
+                              }
+                          };
+                      });
+                  }
+
+              } catch (error) {
+                  console.error("Failed to fetch ThingSpeak data:", error);
+                  // Optionally, you can set an alert to show the error on the dashboard
+                  setAlerts([{ id: 'error', type: 'Error', message: 'Could not connect to ThingSpeak.', time: 'Just now', severity: 'high' }]);
+              }
+          };
+
+          // --- MODIFIED: useEffect to fetch data on load and set an interval ---
+          useEffect(() => {
+              fetchThingSpeakData(); // Fetch on initial load
+              const intervalId = setInterval(fetchThingSpeakData, 20000); // Fetch every 20 seconds (ThingSpeak has a 15s update limit)
+
+              return () => clearInterval(intervalId); // Cleanup interval on component unmount
+          }, [selectedLocation, dataType]); // Refetch if location or data type (Current/Past) changes
 
           const [settings, setSettings] = useState({
             autoRefresh: true,
@@ -372,33 +262,7 @@
           }, [selectedLocation, locationsData, dataType, timeRange]);
 
           const handleAddNewLocation = () => {
-            const newLocationName = prompt("Enter the name for the new location:");
-            if (newLocationName && !locationsData[newLocationName]) {
-                setLocationsData(prevData => {
-                    const newData = {
-                        ...prevData,
-                        [newLocationName]: {
-                            current: {
-                                parameters: [
-                                    { name: 'pH', value: 'N/A', change: '0%', isPositive: true, unit: '' },
-                                    { name: 'Turbidity', value: 'N/A', change: '0%', isPositive: true, unit: 'NTU' },
-                                    { name: 'TDS', value: 'N/A', change: '0%', isPositive: true, unit: 'ppm' },
-                                    { name: 'Temperature', value: 'N/A', change: '0%', isPositive: true, unit: '°C' },
-                                    { name: 'WQI', value: 'N/A', change: '0%', isPositive: true, unit: '' }
-                                ],
-                                alerts: [],
-                                reports: [],
-                            },
-                            past: { 'Last 24 Hours': {parameters:[], alerts:[], reports:[]}, 'Last 7 Days': {parameters:[], alerts:[], reports:[]}, 'Last 30 Days': {parameters:[], alerts:[], reports:[]}, 'Last 3 Months': {parameters:[], alerts:[], reports:[]} }
-                        }
-                    };
-                    return newData;
-                });
-                setSelectedLocation(newLocationName);
-            } else if (locationsData[newLocationName]) {
-                alert("A location with this name already exists.");
-            }
-            setIsLocationDropdownOpen(false);
+            alert("Adding new locations dynamically from ThingSpeak is not supported in this version.");
           };
 
           const handleGenerateReport = () => {
