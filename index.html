@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Quality Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>
+        tailwind.config = {
+          darkMode: 'class',
+        }
+      </script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // --- Icon Components (inlined SVGs as lucide-react is not available) ---
+        const Settings = ({ size = 24, className = '' }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2.82l-.15-.1a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l-.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1 0-2.82l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        );
+        const Moon = ({ size = 24, className = '' }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        );
+        const Sun = ({ size = 24, className = '' }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+        );
+        const ChevronDown = ({ size = 24, className = '' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"></path></svg>
+        );
+        const MapPin = ({ size = 24, className = '' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        );
+        const PlusCircle = ({ size = 24, className = '' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+        );
+
+        // --- MOCK DATA STRUCTURE ---
+        const initialData = {
+            'Engineering Faculty': {
+                current: {
+                    parameters: [
+                        { name: 'pH', value: '7.5', change: '+0.2%', isPositive: true, unit: '' },
+                        { name: 'Turbidity', value: '1.2', change: '-0.1%', isPositive: false, unit: 'NTU' },
+                        { name: 'TDS', value: '280', change: '+0.8%', isPositive: true, unit: 'ppm' },
+                        { name: 'Temperature', value: '23', change: '+0.1%', isPositive: true, unit: '°C' },
+                        { name: 'WQI', value: '88', change: '+0.2%', isPositive: true, unit: '' }
+                    ],
+                    alerts: [ { id: 1, type: 'Info', message: 'All systems normal.', time: '1 hour ago', severity: 'low' }],
+                    reports: [ { name: 'Weekly Engineering Report', date: '2025-06-18', status: 'Generated' } ],
+                },
+                past: {
+                    'Last 24 Hours': {
+                        parameters: [
+                            { name: 'pH', value: '7.4', change: '+0.1%', isPositive: true, unit: '' },
+                            { name: 'Turbidity', value: '1.3', change: '+0.1%', isPositive: true, unit: 'NTU' },
+                            { name: 'TDS', value: '282', change: '-0.2%', isPositive: false, unit: 'ppm' },
+                            { name: 'Temperature', value: '22.8', change: '-0.1%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '87', change: '-0.1%', isPositive: false, unit: '' }
+                        ],
+                        alerts: [{ id: 2, type: 'Info', message: 'Minor fluctuation in pH levels overnight.', time: '18 hours ago', severity: 'low' }],
+                        reports: []
+                    },
+                    'Last 7 Days': {
+                        parameters: [
+                            { name: 'pH', value: '7.2', change: '-0.3%', isPositive: false, unit: '' },
+                            { name: 'Turbidity', value: '1.5', change: '+0.2%', isPositive: true, unit: 'NTU' },
+                            { name: 'TDS', value: '275', change: '+0.5%', isPositive: true, unit: 'ppm' },
+                            { name: 'Temperature', value: '22.5', change: '-0.2%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '86', change: '-0.5%', isPositive: false, unit: '' }
+                        ],
+                        alerts: [{ id: 3, type: 'Warning', message: 'TDS levels nearing upper threshold.', time: '3 days ago', severity: 'medium' }],
+                        reports: [{ name: 'Weekly Engineering Report', date: '2025-06-14', status: 'Generated' }]
+                    },
+                    'Last 30 Days': {
+                         parameters: [
+                            { name: 'pH', value: '7.0', change: '0%', isPositive: true, unit: '' },
+                            { name: 'Turbidity', value: '1.5', change: '+0.3%', isPositive: true, unit: 'NTU' },
+                            { name: 'TDS', value: '260', change: '-1.0%', isPositive: false, unit: 'ppm' },
+                            { name: 'Temperature', value: '22.0', change: '-0.5%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '84', change: '-1.2%', isPositive: false, unit: '' }
+                         ],
+                         alerts: [],
+                         reports: [{ name: 'Monthly Maintenance Report', date: '2025-05-30', status: 'Generated' }]
+                    },
+                    'Last 3 Months': {
+                        parameters: [
+                            { name: 'pH', value: '7.1', change: '+0.1%', isPositive: true, unit: '' },
+                            { name: 'Turbidity', value: '1.0', change: '-0.2%', isPositive: false, unit: 'NTU' },
+                            { name: 'TDS', value: '250', change: '-0.8%', isPositive: false, unit: 'ppm' },
+                            { name: 'Temperature', value: '21.5', change: '-0.3%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '85', change: '+1.2%', isPositive: true, unit: '' }
+                        ],
+                        alerts: [{ id: 4, type: 'Alert', message: 'Filter replacement performed.', time: '2 months ago', severity: 'high' }],
+                        reports: [{ name: 'Quarterly Review', date: '2025-04-01', status: 'Generated' }]
+                    }
+                }
+            },
+            'Management Faculty': {
+                current: {
+                    parameters: [
+                        { name: 'pH', value: '7.1', change: '0.0%', isPositive: true, unit: '' },
+                        { name: 'Turbidity', value: '0.9', change: '+0.5%', isPositive: true, unit: 'NTU' },
+                        { name: 'TDS', value: '210', change: '-0.3%', isPositive: false, unit: 'ppm' },
+                        { name: 'Temperature', value: '24', change: '+0.2%', isPositive: true, unit: '°C' },
+                        { name: 'WQI', value: '92', change: '+1.1%', isPositive: true, unit: '' }
+                    ],
+                    alerts: [ { id: 101, type: 'Info', message: 'Stable conditions reported.', time: '2 hours ago', severity: 'low' }],
+                    reports: [ { name: 'Management Dept. Monthly', date: '2025-06-01', status: 'Generated' }],
+                },
+                past: {
+                    'Last 24 Hours': { 
+                        parameters: [
+                            { name: 'pH', value: '7.1', change: '0%', isPositive: true, unit: '' },
+                            { name: 'Turbidity', value: '0.9', change: '0%', isPositive: true, unit: 'NTU' },
+                            { name: 'TDS', value: '211', change: '+0.1%', isPositive: true, unit: 'ppm' },
+                            { name: 'Temperature', value: '23.9', change: '-0.1%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '92', change: '0%', isPositive: true, unit: '' }
+                        ], 
+                        alerts: [], 
+                        reports: [] 
+                    },
+                    'Last 7 Days': {
+                        parameters: [
+                            { name: 'pH', value: '7.0', change: '-0.1%', isPositive: false, unit: '' },
+                            { name: 'Turbidity', value: '1.0', change: '+0.1%', isPositive: true, unit: 'NTU' },
+                            { name: 'TDS', value: '208', change: '-0.2%', isPositive: false, unit: 'ppm' },
+                            { name: 'Temperature', value: '23.5', change: '-0.5%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '91', change: '-0.5%', isPositive: false, unit: '' }
+                        ],
+                        alerts: [],
+                        reports: []
+                    },
+                    'Last 30 Days': { 
+                        parameters: [
+                            { name: 'pH', value: '7.2', change: '+0.2%', isPositive: true, unit: '' },
+                            { name: 'Turbidity', value: '0.8', change: '-0.1%', isPositive: false, unit: 'NTU' },
+                            { name: 'TDS', value: '215', change: '+0.3%', isPositive: true, unit: 'ppm' },
+                            { name: 'Temperature', value: '23.0', change: '-0.4%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '93', change: '+0.8%', isPositive: true, unit: '' }
+                        ], 
+                        alerts: [], 
+                        reports: [] 
+                    },
+                    'Last 3 Months': { 
+                        parameters: [
+                            { name: 'pH', value: '7.3', change: '+0.1%', isPositive: true, unit: '' },
+                            { name: 'Turbidity', value: '0.7', change: '-0.2%', isPositive: false, unit: 'NTU' },
+                            { name: 'TDS', value: '205', change: '-0.5%', isPositive: false, unit: 'ppm' },
+                            { name: 'Temperature', value: '22.5', change: '-0.6%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '94', change: '+1.0%', isPositive: true, unit: '' }
+                        ], 
+                        alerts: [], 
+                        reports: [] 
+                    }
+                }
+            },
+            'Technology Faculty': {
+                current: {
+                    parameters: [
+                        { name: 'pH', value: '6.9', change: '-0.4%', isPositive: false, unit: '' },
+                        { name: 'Turbidity', value: '2.5', change: '+2.1%', isPositive: true, unit: 'NTU' },
+                        { name: 'TDS', value: '350', change: '+1.5%', isPositive: true, unit: 'ppm' },
+                        { name: 'Temperature', value: '21', change: '-0.8%', isPositive: false, unit: '°C' },
+                        { name: 'WQI', value: '81', change: '-1.5%', isPositive: false, unit: '' }
+                    ],
+                    alerts: [{ id: 201, type: 'Warning', message: 'Turbidity spike in Lab 3', time: '45 minutes ago', severity: 'medium' }],
+                    reports: [{ name: 'Tech Labs Water Analysis', date: '2025-06-20', status: 'In Progress' }],
+                },
+                past: {
+                    'Last 24 Hours': {
+                        parameters: [
+                            { name: 'pH', value: '7.0', change: '+0.1%', isPositive: true, unit: '' },
+                            { name: 'Turbidity', value: '2.2', change: '+1.0%', isPositive: true, unit: 'NTU' },
+                            { name: 'TDS', value: '345', change: '-0.5%', isPositive: false, unit: 'ppm' },
+                            { name: 'Temperature', value: '21.2', change: '+0.1%', isPositive: true, unit: '°C' },
+                            { name: 'WQI', value: '82', change: '+0.5%', isPositive: true, unit: '' }
+                        ],
+                        alerts: [{ id: 202, type: 'Info', message: 'Turbidity levels stabilized.', time: '8 hours ago', severity: 'low' }],
+                        reports: []
+                    },
+                    'Last 7 Days': { 
+                        parameters: [
+                            { name: 'pH', value: '6.8', change: '-0.2%', isPositive: false, unit: '' },
+                            { name: 'Turbidity', value: '1.8', change: '-0.5%', isPositive: false, unit: 'NTU' },
+                            { name: 'TDS', value: '330', change: '-1.0%', isPositive: false, unit: 'ppm' },
+                            { name: 'Temperature', value: '20.8', change: '-0.2%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '80', change: '-1.0%', isPositive: false, unit: '' }
+                        ], 
+                        alerts: [], 
+                        reports: [] 
+                    },
+                    'Last 30 Days': { 
+                        parameters: [
+                            { name: 'pH', value: '7.1', change: '+0.3%', isPositive: true, unit: '' },
+                            { name: 'Turbidity', value: '1.5', change: '-0.8%', isPositive: false, unit: 'NTU' },
+                            { name: 'TDS', value: '320', change: '-1.5%', isPositive: false, unit: 'ppm' },
+                            { name: 'Temperature', value: '20.5', change: '-0.3%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '83', change: '+1.2%', isPositive: true, unit: '' }
+                        ], 
+                        alerts: [], 
+                        reports: [] 
+                    },
+                    'Last 3 Months': { 
+                        parameters: [
+                            { name: 'pH', value: '7.2', change: '+0.2%', isPositive: true, unit: '' },
+                            { name: 'Turbidity', value: '1.2', change: '-1.0%', isPositive: false, unit: 'NTU' },
+                            { name: 'TDS', value: '300', change: '-2.0%', isPositive: false, unit: 'ppm' },
+                            { name: 'Temperature', value: '20.0', change: '-0.5%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '85', change: '+1.5%', isPositive: true, unit: '' }
+                        ], 
+                        alerts: [], 
+                        reports: [] 
+                    }
+                }
+            },
+            'Applied Faculty': {
+                current: {
+                    parameters: [
+                        { name: 'pH', value: '7.3', change: '+0.1%', isPositive: true, unit: '' },
+                        { name: 'Turbidity', value: '1.1', change: '-0.2%', isPositive: false, unit: 'NTU' },
+                        { name: 'TDS', value: '240', change: '+0.3%', isPositive: true, unit: 'ppm' },
+                        { name: 'Temperature', value: '22.5', change: '0.0%', isPositive: true, unit: '°C' },
+                        { name: 'WQI', value: '89', change: '+0.5%', isPositive: true, unit: '' }
+                    ],
+                    alerts: [{ id: 301, type: 'Info', message: 'Water quality optimal for experiments.', time: '3 hours ago', severity: 'low' }],
+                    reports: [ { name: 'Applied Sciences Quarterly', date: '2025-04-15', status: 'Generated' } ],
+                },
+                past: {
+                    'Last 24 Hours': { 
+                        parameters: [
+                            { name: 'pH', value: '7.3', change: '0%', isPositive: true, unit: '' },
+                            { name: 'Turbidity', value: '1.1', change: '0%', isPositive: true, unit: 'NTU' },
+                            { name: 'TDS', value: '241', change: '+0.1%', isPositive: true, unit: 'ppm' },
+                            { name: 'Temperature', value: '22.6', change: '+0.1%', isPositive: true, unit: '°C' },
+                            { name: 'WQI', value: '89', change: '0%', isPositive: true, unit: '' }
+                        ], 
+                        alerts: [], 
+                        reports: [] 
+                    },
+                    'Last 7 Days': { 
+                        parameters: [
+                            { name: 'pH', value: '7.2', change: '-0.1%', isPositive: false, unit: '' },
+                            { name: 'Turbidity', value: '1.2', change: '+0.1%', isPositive: true, unit: 'NTU' },
+                            { name: 'TDS', value: '238', change: '-0.2%', isPositive: false, unit: 'ppm' },
+                            { name: 'Temperature', value: '22.3', change: '-0.2%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '88', change: '-0.3%', isPositive: false, unit: '' }
+                        ], 
+                        alerts: [], 
+                        reports: [] 
+                    },
+                    'Last 30 Days': { 
+                        parameters: [
+                            { name: 'pH', value: '7.4', change: '+0.2%', isPositive: true, unit: '' },
+                            { name: 'Turbidity', value: '1.0', change: '-0.1%', isPositive: false, unit: 'NTU' },
+                            { name: 'TDS', value: '245', change: '+0.4%', isPositive: true, unit: 'ppm' },
+                            { name: 'Temperature', value: '22.0', change: '-0.3%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '90', change: '+0.6%', isPositive: true, unit: '' }
+                        ], 
+                        alerts: [], 
+                        reports: [] 
+                    },
+                    'Last 3 Months': { 
+                        parameters: [
+                            { name: 'pH', value: '7.5', change: '+0.1%', isPositive: true, unit: '' },
+                            { name: 'Turbidity', value: '0.9', change: '-0.2%', isPositive: false, unit: 'NTU' },
+                            { name: 'TDS', value: '235', change: '-0.4%', isPositive: false, unit: 'ppm' },
+                            { name: 'Temperature', value: '21.8', change: '-0.4%', isPositive: false, unit: '°C' },
+                            { name: 'WQI', value: '91', change: '+0.7%', isPositive: true, unit: '' }
+                        ], 
+                        alerts: [], 
+                        reports: [] 
+                    }
+                }
+            }
+        };
+
+        const App = () => {
+          const { useState, useEffect, useRef } = React;
+          const [activeTab, setActiveTab] = useState('Parameters');
+          const [isDarkMode, setIsDarkMode] = useState(false);
+          const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
+          const [dataType, setDataType] = useState('Current');
+          const [timeRange, setTimeRange] = useState('Last 24 Hours');
+          const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false);
+          const [rotatingButton, setRotatingButton] = useState(null);
+          
+          const [locationsData, setLocationsData] = useState(initialData);
+          const [selectedLocation, setSelectedLocation] = useState('Engineering Faculty');
+          const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
+
+          const [reports, setReports] = useState(locationsData[selectedLocation].current.reports);
+          const [alerts, setAlerts] = useState(locationsData[selectedLocation].current.alerts);
+
+          const [settings, setSettings] = useState({
+            autoRefresh: true,
+            emailNotifications: true,
+            smsAlerts: false,
+          });
+          const [thresholds, setThresholds] = useState({
+            phMin: 6.5,
+            phMax: 8.5,
+            turbidityMax: 5,
+            tdsMax: 500,
+          });
+          
+          const locationDropdownRef = useRef(null);
+          const timeDropdownRef = useRef(null);
+
+          const tabs = ['Parameters', 'Alerts', 'Reports'];
+          const locations = Object.keys(locationsData);
+
+          useEffect(() => {
+            const root = document.documentElement;
+            if (isDarkMode) {
+                root.classList.add('dark');
+                document.body.style.backgroundColor = '#030712';
+            } else {
+                root.classList.remove('dark');
+                document.body.style.backgroundColor = '#f9fafb';
+            }
+          }, [isDarkMode]);
+          
+          const useClickOutside = (ref, handler) => {
+            useEffect(() => {
+                const listener = (event) => {
+                    if (!ref.current || ref.current.contains(event.target)) {
+                        return;
+                    }
+                    handler(event);
+                };
+                document.addEventListener('mousedown', listener);
+                document.addEventListener('touchstart', listener);
+                return () => {
+                    document.removeEventListener('mousedown', listener);
+                    document.removeEventListener('touchstart', listener);
+                };
+            }, [ref, handler]);
+          };
+          
+          useClickOutside(locationDropdownRef, () => setIsLocationDropdownOpen(false));
+          useClickOutside(timeDropdownRef, () => setIsTimeDropdownOpen(false));
+
+          useEffect(() => {
+            const dataForLocation = locationsData[selectedLocation];
+            if (dataForLocation) {
+              if (dataType === 'Current') {
+                setReports(dataForLocation.current.reports);
+                setAlerts(dataForLocation.current.alerts);
+              } else {
+                const pastData = dataForLocation.past[timeRange] || { reports: [], alerts: [] };
+                setReports(pastData.reports);
+                setAlerts(pastData.alerts);
+              }
+            }
+          }, [selectedLocation, locationsData, dataType, timeRange]);
+
+          const handleAddNewLocation = () => {
+            const newLocationName = prompt("Enter the name for the new location:");
+            if (newLocationName && !locationsData[newLocationName]) {
+                setLocationsData(prevData => {
+                    const newData = {
+                        ...prevData,
+                        [newLocationName]: {
+                            current: {
+                                parameters: [
+                                    { name: 'pH', value: 'N/A', change: '0%', isPositive: true, unit: '' },
+                                    { name: 'Turbidity', value: 'N/A', change: '0%', isPositive: true, unit: 'NTU' },
+                                    { name: 'TDS', value: 'N/A', change: '0%', isPositive: true, unit: 'ppm' },
+                                    { name: 'Temperature', value: 'N/A', change: '0%', isPositive: true, unit: '°C' },
+                                    { name: 'WQI', value: 'N/A', change: '0%', isPositive: true, unit: '' }
+                                ],
+                                alerts: [],
+                                reports: [],
+                            },
+                            past: { 'Last 24 Hours': {parameters:[], alerts:[], reports:[]}, 'Last 7 Days': {parameters:[], alerts:[], reports:[]}, 'Last 30 Days': {parameters:[], alerts:[], reports:[]}, 'Last 3 Months': {parameters:[], alerts:[], reports:[]} }
+                        }
+                    };
+                    return newData;
+                });
+                setSelectedLocation(newLocationName);
+            } else if (locationsData[newLocationName]) {
+                alert("A location with this name already exists.");
+            }
+            setIsLocationDropdownOpen(false);
+          };
+
+          const handleGenerateReport = () => {
+            const newReport = {
+              name: `New Report - ${selectedLocation}`,
+              date: new Date().toISOString().split('T')[0],
+              status: 'In Progress'
+            };
+            if(dataType === 'Current') {
+                setReports(prevReports => [newReport, ...prevReports]);
+            } else {
+                console.warn("Generating new reports is only available for current data.");
+            }
+          };
+
+          const handleSaveSettings = () => {
+            console.log('Saving settings:', { settings, thresholds });
+            setShowSaveConfirmation(true);
+            setTimeout(() => setShowSaveConfirmation(false), 3000);
+          };
+
+          const handleIconClick = (buttonName) => {
+            setRotatingButton(buttonName);
+            setTimeout(() => setRotatingButton(null), 500);
+          };
+          
+          const handleSettingsChange = (e) => {
+            const { name, checked } = e.target;
+            setSettings(prev => ({ ...prev, [name]: checked }));
+          };
+
+          const handleThresholdChange = (e) => {
+            const { name, value } = e.target;
+            setThresholds(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
+          };
+
+          const handleTimeRangeSelect = (range) => {
+            setTimeRange(range);
+            setIsTimeDropdownOpen(false);
+          }
+          
+          const handleLocationSelect = (location) => {
+              setSelectedLocation(location);
+              setIsLocationDropdownOpen(false);
+          }
+
+          const ChartSVG = () => (
+            <svg width="100%" height="148" viewBox="-3 0 478 150" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+              <path
+                d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25V149H326.769H0V109Z"
+                fill={isDarkMode ? "url(#paint0_linear_dark)" : "url(#paint0_linear)"}
+              />
+              <path
+                d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25"
+                stroke={isDarkMode ? "#556269" : "#6a7881"}
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+              <defs>
+                <linearGradient id="paint0_linear" x1="236" y1="1" x2="236" y2="149" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#f1f3f4" />
+                  <stop offset="1" stopColor="#f1f3f4" stopOpacity="0" />
+                </linearGradient>
+                 <linearGradient id="paint0_linear_dark" x1="236" y1="1" x2="236" y2="149" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#374151" />
+                  <stop offset="1" stopColor="#374151" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+            </svg>
+          );
+
+          const renderTabContent = () => {
+            const dataForLocation = locationsData[selectedLocation];
+            if (!dataForLocation) return <p className="text-center p-10 text-gray-500 dark:text-gray-400">Please select a location.</p>;
+
+            const isCurrent = dataType === 'Current';
+            const data = isCurrent ? dataForLocation.current : (dataForLocation.past[timeRange] || {});
+
+            switch (activeTab) {
+              case 'Parameters': {
+                const parameters = data.parameters || [];
+                const displayTimeRange = isCurrent ? 'Last 24 Hours' : timeRange;
+                
+                if (parameters.length === 0) {
+                    return <p className="text-center p-10 text-gray-500 dark:text-gray-400">No parameter data for this period.</p>;
+                }
+
+                return (
+                  <div className="flex flex-wrap gap-4 px-4 py-6">
+                    {parameters.map((param, index) => (
+                      <div key={index} className="flex min-w-72 flex-1 flex-col gap-2 rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800">
+                        <p className="text-gray-900 dark:text-gray-100 text-base font-medium">{param.name}</p>
+                        <p className="text-gray-900 dark:text-white text-3xl font-bold">
+                          {param.value}{param.unit}
+                        </p>
+                        <div className="flex gap-1">
+                          <p className="text-gray-500 dark:text-gray-400 text-base">{displayTimeRange}</p>
+                          <p className={`text-base font-medium ${param.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {param.change}
+                          </p>
+                        </div>
+                        <div className="flex min-h-[180px] flex-1 flex-col gap-8 py-4">
+                          <ChartSVG />
+                          <div className="flex justify-around">
+                            {['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'].map((time, i) => (
+                              <p key={i} className="text-gray-500 dark:text-gray-400 text-xs font-bold">{time}</p>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+              case 'Alerts': {
+                const alertsToDisplay = data.alerts || [];
+                if (alertsToDisplay.length === 0) {
+                    return <p className="text-center p-10 text-gray-500 dark:text-gray-400">No alerts for this period.</p>;
+                }
+                return (
+                  <div className="px-4 py-6">
+                    <div className="space-y-4">
+                      {alertsToDisplay.map((alert) => (
+                        <div key={alert.id} className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              alert.severity === 'high' ? 'bg-red-500' : 
+                              alert.severity === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
+                            }`}></div>
+                            <div>
+                              <p className="text-gray-900 dark:text-gray-100 font-medium">{alert.type}</p>
+                              <p className="text-gray-600 dark:text-gray-300 text-sm">{alert.message}</p>
+                            </div>
+                          </div>
+                          <p className="text-gray-500 dark:text-gray-400 text-sm">{alert.time}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+              case 'Reports': {
+                const reportsToDisplay = data.reports || [];
+                if (reportsToDisplay.length === 0 && isCurrent) {
+                    // Show generate button even if no reports exist for current data
+                } else if (reportsToDisplay.length === 0) {
+                    return <p className="text-center p-10 text-gray-500 dark:text-gray-400">No reports for this period.</p>;
+                }
+                return (
+                  <div className="px-4 py-6">
+                    <div className="space-y-4">
+                      {reportsToDisplay.length > 0 ? reportsToDisplay.map((report, index) => (
+                        <div key={index} className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                          <div>
+                            <p className="text-gray-900 dark:text-gray-100 font-medium">{report.name}</p>
+                            <p className="text-gray-600 dark:text-gray-300 text-sm">Generated on {report.date}</p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            report.status === 'Generated' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                            report.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                          }`}>
+                            {report.status}
+                          </span>
+                        </div>
+                      )) : (
+                         <p className="text-center text-gray-500 dark:text-gray-400 py-4">No reports generated yet.</p>
+                      )}
+                      <button onClick={handleGenerateReport} className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50" disabled={!isCurrent}>
+                        Generate New Report
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+              case 'Settings':
+                return (
+                  <div className="px-4 py-6">
+                    <div className="space-y-6">
+                      <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                        <h3 className="text-gray-900 dark:text-gray-100 font-medium mb-4">Monitoring Settings</h3>
+                        <div className="space-y-4">
+                          <label className="flex items-center justify-between cursor-pointer">
+                            <span className="text-gray-700 dark:text-gray-300">Auto-refresh data</span>
+                            <input type="checkbox" name="autoRefresh" checked={settings.autoRefresh} onChange={handleSettingsChange} className="rounded text-blue-500 focus:ring-blue-500" />
+                          </label>
+                          <label className="flex items-center justify-between cursor-pointer">
+                            <span className="text-gray-700 dark:text-gray-300">Email notifications</span>
+                            <input type="checkbox" name="emailNotifications" checked={settings.emailNotifications} onChange={handleSettingsChange} className="rounded text-blue-500 focus:ring-blue-500" />
+                          </label>
+                          <label className="flex items-center justify-between cursor-pointer">
+                            <span className="text-gray-700 dark:text-gray-300">SMS alerts</span>
+                            <input type="checkbox" name="smsAlerts" checked={settings.smsAlerts} onChange={handleSettingsChange} className="rounded text-blue-500 focus:ring-blue-500" />
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                        <h3 className="text-gray-900 dark:text-gray-100 font-medium mb-4">Threshold Values</h3>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-700 dark:text-gray-300">pH Min/Max</span>
+                            <div className="flex gap-2">
+                              <input type="number" name="phMin" value={thresholds.phMin} onChange={handleThresholdChange} className="w-20 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                              <input type="number" name="phMax" value={thresholds.phMax} onChange={handleThresholdChange} className="w-20 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-700 dark:text-gray-300">Turbidity Max (NTU)</span>
+                            <input type="number" name="turbidityMax" value={thresholds.turbidityMax} onChange={handleThresholdChange} className="w-20 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-700 dark:text-gray-300">TDS Max (ppm)</span>
+                            <input type="number" name="tdsMax" value={thresholds.tdsMax} onChange={handleThresholdChange} className="w-20 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="relative">
+                        <button onClick={handleSaveSettings} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                          Save Settings
+                        </button>
+                        {showSaveConfirmation && (
+                           <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-max px-4 py-2 bg-gray-900 text-white text-sm rounded-md transition-opacity duration-300">
+                            Settings saved successfully!
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+
+              default:
+                return null;
+            }
+          };
+          
+          return (
+            <div className={`${isDarkMode ? 'dark' : ''}`}>
+                <div className="bg-gray-50 dark:bg-gray-950" style={{ fontFamily: 'Inter, "Noto Sans", sans-serif' }}>
+                <style>{`
+                  /* Icon rotation animation */
+                  @keyframes rotate-360 {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                  }
+                  .animate-rotate {
+                    animation: rotate-360 0.5s ease-in-out;
+                  }
+                `}</style>
+                <div className="flex min-h-screen flex-col">
+                  {/* Header */}
+                  <header className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3 bg-white dark:bg-gray-900">
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-4 text-gray-900 dark:text-white">
+                          <div className="w-4 h-4 text-blue-600 dark:text-blue-400">
+                            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path
+                                fillRule="evenodd"
+                                clipRule="evenodd"
+                                d="M39.475 21.6262C40.358 21.4363 40.6863 21.5589 40.7581 21.5934C40.7876 21.655 40.8547 21.857 40.8082 22.3336C40.7408 23.0255 40.4502 24.0046 39.8572 25.2301C38.6799 27.6631 36.5085 30.6631 33.5858 33.5858C30.6631 36.5085 27.6632 38.6799 25.2301 39.8572C24.0046 40.4502 23.0255 40.7407 22.3336 40.8082C21.8571 40.8547 21.6551 40.7875 21.5934 40.7581C21.5589 40.6863 21.4363 40.358 21.6262 39.475C21.8562 38.4054 22.4689 36.9657 23.5038 35.2817C24.7575 33.2417 26.5497 30.9744 28.7621 28.762C30.9744 26.5497 33.2417 24.7574 35.2817 23.5037C36.9657 22.4689 38.4054 21.8562 39.475 21.6262ZM4.41189 29.2403L18.7597 43.5881C19.8813 44.7097 21.4027 44.9179 22.7217 44.7893C24.0585 44.659 25.5148 44.1631 26.9723 43.4579C29.9052 42.0387 33.2618 39.5667 36.4142 36.4142C39.5667 33.2618 42.0387 29.9052 43.4579 26.9723C44.1631 25.5148 44.659 24.0585 44.7893 22.7217C44.9179 21.4027 44.7097 19.8813 43.5881 18.7597L29.2403 4.41187C27.8527 3.02428 25.8765 3.02573 24.2861 3.36776C22.6081 3.72863 20.7334 4.58419 18.8396 5.74801C16.4978 7.18716 13.9881 9.18353 11.5858 11.5858C9.18354 13.988 7.18717 16.4978 5.74802 18.8396C4.58421 20.7334 3.72865 22.6081 3.36778 24.2861C3.02574 25.8765 3.02429 27.8527 4.41189 29.2403Z"
+                                fill="currentColor"
+                              />
+                            </svg>
+                          </div>
+                          <h2 className="text-gray-900 dark:text-white text-lg font-bold">AquaTrack</h2>
+                      </div>
+                      <div className="relative" ref={locationDropdownRef}>
+                          <button onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)} className="flex items-center gap-2 h-full px-3 py-1 text-sm font-medium rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">
+                              <MapPin size={16} />
+                              {selectedLocation}
+                              <ChevronDown size={16} className={`transition-transform duration-200 ${isLocationDropdownOpen ? 'rotate-180' : ''}`} />
+                          </button>
+                          <div className={`absolute top-full left-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 origin-top-left transition-all duration-200 ease-out ${isLocationDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+                              <div className="p-1">
+                                  {locations.map((loc, index) => (
+                                      <a key={loc} href="#" 
+                                         onClick={(e) => { e.preventDefault(); handleLocationSelect(loc); }} 
+                                         className={`block rounded-md px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-150 ease-in-out ${isLocationDropdownOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'}`}
+                                         style={{ transitionDelay: `${index * 25 + 50}ms` }}>
+                                          {loc}
+                                      </a>
+                                  ))}
+                                  <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                                  <a href="#" 
+                                     onClick={(e) => { e.preventDefault(); handleAddNewLocation(); }} 
+                                     className={`flex items-center gap-2 px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-all duration-150 ease-in-out ${isLocationDropdownOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'}`}
+                                     style={{ transitionDelay: `${locations.length * 25 + 50}ms` }}>
+                                     <PlusCircle size={16} />
+                                     Add New Location...
+                                  </a>
+                              </div>
+                          </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-1 justify-end items-center gap-4">
+                      <div className="flex items-center gap-2 rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
+                          <button onClick={() => setDataType('Current')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${dataType === 'Current' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>Current Data</button>
+                          <button onClick={() => setDataType('Past')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${dataType === 'Past' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>Past Data</button>
+                      </div>
+
+                      {dataType === 'Past' && (
+                          <div className="relative" ref={timeDropdownRef}>
+                              <button onClick={() => setIsTimeDropdownOpen(!isTimeDropdownOpen)} className="flex items-center gap-2 h-full px-3 py-1 text-sm font-medium rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">
+                                  {timeRange}
+                                  <ChevronDown size={16} className={`transition-transform duration-200 ${isTimeDropdownOpen ? 'rotate-180' : ''}`} />
+                              </button>
+                              {isTimeDropdownOpen && (
+                                  <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                                      {Object.keys(locationsData[selectedLocation].past).map(range => (
+                                          <a key={range} href="#" onClick={(e) => { e.preventDefault(); handleTimeRangeSelect(range); }} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                              {range}
+                                          </a>
+                                      ))}
+                                  </div>
+                              )}
+                          </div>
+                      )}
+                      
+                      <div className="flex items-center gap-2">
+                         <div className="relative group">
+                              <button
+                                  onClick={() => {
+                                      setActiveTab(prev => prev === 'Settings' ? 'Parameters' : 'Settings');
+                                      handleIconClick('settings');
+                                  }}
+                                  className={`flex items-center justify-center rounded-full h-10 w-10 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${
+                                      rotatingButton === 'settings' ? 'animate-rotate' : ''
+                                  }`}
+                              >
+                                  <Settings size={20} />
+                              </button>
+                              <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none">
+                                  Settings
+                              </span>
+                          </div>
+                          <div className="relative group">
+                              <button
+                                  onClick={() => {
+                                      setIsDarkMode(!isDarkMode);
+                                      handleIconClick('theme');
+                                  }}
+                                  className={`flex items-center justify-center rounded-full h-10 w-10 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${
+                                      rotatingButton === 'theme' ? 'animate-rotate' : ''
+                                  }`}
+                              >
+                                  {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                              </button>
+                              <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none">
+                                  {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                              </span>
+                          </div>
+                      </div>
+                    </div>
+                  </header>
+
+                  {/* Main Content */}
+                  <main className="flex-1 px-4 sm:px-6 lg:px-10 py-5 bg-gray-50 dark:bg-gray-950">
+                    <div className="w-full max-w-6xl mx-auto">
+                      <div className="flex flex-wrap justify-between items-center gap-3 p-4">
+                        <h1 className="text-gray-900 dark:text-white text-3xl font-bold">Water Quality Monitoring</h1>
+                      </div>
+                      
+                      {/* Tab Navigation */}
+                      <div className="pb-3">
+                        <div className="flex border-b border-gray-300 dark:border-gray-700 px-4 gap-8">
+                          {tabs.map((tab) => (
+                            <button
+                              key={tab}
+                              onClick={() => setActiveTab(tab)}
+                              className={`relative group flex flex-col items-center justify-center pb-4 pt-4 transition-colors text-sm font-bold ${
+                                activeTab === tab
+                                  ? 'text-blue-600 dark:text-blue-400'
+                                  : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                              }`}
+                            >
+                              <span>{tab}</span>
+                               <span
+                                className={`absolute bottom-0 left-0 h-0.5 bg-blue-500 dark:bg-blue-400 transition-all duration-300 ease-in-out ${
+                                  activeTab === tab ? 'w-full' : 'w-0 group-hover:w-full'
+                                }`}
+                              ></span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Tab Content */}
+                      {renderTabContent()}
+                    </div>
+                  </main>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
