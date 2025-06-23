@@ -1,595 +1,630 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-
-// --- Icon Components (Inlined SVGs for portability) ---
-const SettingsIcon = ({ size = 24, className = '' }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2.82l-.15-.1a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l-.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1 0-2.82l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-    <circle cx="12" cy="12" r="3"></circle>
-  </svg>
-);
-const MoonIcon = ({ size = 24, className = '' }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-  </svg>
-);
-const SunIcon = ({ size = 24, className = '' }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="12" cy="12" r="4"></circle>
-    <path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path>
-    <path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path>
-    <path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
-  </svg>
-);
-const ChevronDownIcon = ({ size = 24, className = '' }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"></path></svg>
-);
-const MapPinIcon = ({ size = 24, className = '' }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-);
-const XIcon = ({ size = 24, className = '' }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-);
-const AquaTrackLogo = ({ className = '' }) => (
-    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-        <path fillRule="evenodd" clipRule="evenodd" d="M39.475 21.6262C40.358 21.4363 40.6863 21.5589 40.7581 21.5934C40.7876 21.655 40.8547 21.857 40.8082 22.3336C40.7408 23.0255 40.4502 24.0046 39.8572 25.2301C38.6799 27.6631 36.5085 30.6631 33.5858 33.5858C30.6631 36.5085 27.6632 38.6799 25.2301 39.8572C24.0046 40.4502 23.0255 40.7407 22.3336 40.8082C21.8571 40.8547 21.6551 40.7875 21.5934 40.7581C21.5589 40.6863 21.4363 40.358 21.6262 39.475C21.8562 38.4054 22.4689 36.9657 23.5038 35.2817C24.7575 33.2417 26.5497 30.9744 28.7621 28.762C30.9744 26.5497 33.2417 24.7574 35.2817 23.5037C36.9657 22.4689 38.4054 21.8562 39.475 21.6262ZM4.41189 29.2403L18.7597 43.5881C19.8813 44.7097 21.4027 44.9179 22.7217 44.7893C24.0585 44.659 25.5148 44.1631 26.9723 43.4579C29.9052 42.0387 33.2618 39.5667 36.4142 36.4142C39.5667 33.2618 42.0387 29.9052 43.4579 26.9723C44.1631 25.5148 44.659 24.0585 44.7893 22.7217C44.9179 21.4027 44.7097 19.8813 43.5881 18.7597L29.2403 4.41187C27.8527 3.02428 25.8765 3.02573 24.2861 3.36776C22.6081 3.72863 20.7334 4.58419 18.8396 5.74801C16.4978 7.18716 13.9881 9.18353 11.5858 11.5858C9.18354 13.988 7.18717 16.4978 5.74802 18.8396C4.58421 20.7334 3.72865 22.6081 3.36778 24.2861C3.02574 25.8765 3.02429 27.8527 4.41189 29.2403Z" fill="currentColor" />
-    </svg>
-);
-
-
-// --- Initial Data Structure & Configuration ---
-const initialData = {
-    'ESP32 Sensor Hub': {
-        current: {
-            parameters: [
-                { name: 'pH', value: '...', change: '...', isPositive: true, unit: '', history: [] },
-                { name: 'Turbidity', value: '...', change: '...', isPositive: false, unit: 'NTU', history: [] },
-                { name: 'TDS', value: '...', change: '...', isPositive: true, unit: 'ppm', history: [] },
-                { name: 'Temperature', value: '...', change: '...', isPositive: true, unit: '°C', history: [] },
-                { name: 'WQI', value: '...', change: '...', isPositive: true, unit: '', history: [] }
-            ],
-            alerts: [],
-            reports: [{ name: 'Weekly Engineering Report', date: '2025-06-18', status: 'Generated' }],
-        },
-        past: { 'Last 24 Hours': { parameters: [], alerts: [], reports: [] } }
-    },
-};
-
-const thingSpeakConfig = {
-    channelId: '2971437',
-    apiKey: 'NUACMFTOOWWV7X5Y',
-    fieldMapping: {
-        'field4': 'pH', 
-        'field3': 'Turbidity', 
-        'field2': 'TDS',
-        'field1': 'Temperature', 
-        'field5': 'WQI',
-    }
-};
-
-// --- Utility Functions ---
-const formatTimeAgo = (isoString) => {
-    if (!isoString) return 'a while ago';
-    const date = new Date(isoString);
-    const now = new Date();
-    const seconds = Math.round((now - date) / 1000);
-    const minutes = Math.round(seconds / 60);
-    const hours = Math.round(minutes / 60);
-    const days = Math.round(hours / 24);
-
-    if (seconds < 60) return "Just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return `${days}d ago`;
-};
-
-
-// --- Custom Hooks ---
-const useClickOutside = (ref, handler) => {
-    useEffect(() => {
-        const listener = (event) => {
-            if (!ref.current || ref.current.contains(event.target)) return;
-            handler(event);
-        };
-        document.addEventListener('mousedown', listener);
-        document.addEventListener('touchstart', listener);
-        return () => {
-            document.removeEventListener('mousedown', listener);
-            document.removeEventListener('touchstart', listener);
-        };
-    }, [ref, handler]);
-};
-
-// --- Child Components ---
-
-const ChartSVG = ({ data = [], isDarkMode }) => {
-    const pathRef = useRef(null);
-    const containerRef = useRef(null);
-    const [pathLength, setPathLength] = useState(0);
-    const [hoveredPoint, setHoveredPoint] = useState(null);
-
-    const hasData = data && data.length >= 2;
-
-    useLayoutEffect(() => {
-        if (hasData && pathRef.current) {
-            const length = pathRef.current.getTotalLength();
-            setPathLength(length);
-        }
-    }, [data, hasData]);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AquaTrack - Water Quality Dashboard</title>
     
-    const width = 472;
-    const height = 149;
-    const padding = 5;
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- **FIX**: Configure Tailwind CSS for class-based dark mode AFTER loading the library -->
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+      }
+    </script>
 
-    const scalePoint = (value, index) => {
-        const maxVal = Math.max(...data);
-        const minVal = Math.min(...data);
-        const valueRange = maxVal - minVal || 1;
-        const x = (index / (data.length - 1)) * width;
-        const yRatio = (maxVal - value) / valueRange;
-        const y = (yRatio * (height - (padding * 2))) + padding;
-        return { x, y };
-    };
+    <!-- React Libraries -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    const handleMouseMove = (event) => {
-        if (!hasData || !containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        
-        const xRatio = Math.max(0, Math.min(1, mouseX / rect.width));
-        const pointIndex = Math.round(xRatio * (data.length - 1));
-        
-        const pointValue = data[pointIndex];
-        if (pointValue !== undefined) {
-            const { x, y } = scalePoint(pointValue, pointIndex);
-            setHoveredPoint({
-                value: pointValue.toFixed(2),
-                x,
-                y,
-            });
+    <style>
+        /* Custom CSS for animations and base font */
+        body {
+            font-family: 'Inter', sans-serif;
         }
-    };
+        @keyframes rotate-360 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-rotate { animation: rotate-360 0.5s ease-in-out; }
+        @keyframes draw { to { stroke-dashoffset: 0; } }
+        .animate-draw { animation: draw 1.5s ease-out forwards; }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fadeInUp { animation: fadeInUp 0.5s ease-out forwards; }
+    </style>
+</head>
+<body>
+    <!-- The React app will be rendered inside this div -->
+    <div id="root"></div>
 
-    const handleMouseLeave = () => {
-        setHoveredPoint(null);
-    };
+    <!-- The entire React application is placed within this script tag -->
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useLayoutEffect } = React;
 
-    if (!hasData) {
-        return (
-            <div className="relative w-full h-[148px]">
-                <svg width="100%" height="100%" viewBox="-3 0 478 150" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                     <path d="M -3,75 L 475,75" stroke={isDarkMode ? "#4b5563" : "#d1d5db"} strokeWidth="3" strokeDasharray="5,5" strokeLinecap="round" />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <p className="text-gray-400 dark:text-gray-500 text-sm">Loading graph data...</p>
-                </div>
-            </div>
+        // --- Icon Components (Inlined SVGs for portability) ---
+        const SettingsIcon = ({ size = 24, className = '' }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2.82l-.15-.1a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l-.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1 0-2.82l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
         );
-    }
-
-    const linePath = data.map((point, index) => {
-        const { x, y } = scalePoint(point, index);
-        return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)},${y.toFixed(2)}`;
-    }).join(' ');
-
-    const { x: firstX } = scalePoint(data[0], 0);
-    const fillPath = `${linePath} V ${height} L ${firstX.toFixed(2)},${height} Z`;
-    const gradientId = `chart_gradient_${isDarkMode}`;
-    
-    let tooltipTransform = '';
-    if (hoveredPoint) {
-        const tooltipX = hoveredPoint.x > width / 2 ? hoveredPoint.x - 75 : hoveredPoint.x + 15;
-        const tooltipY = hoveredPoint.y < 40 ? hoveredPoint.y + 15 : hoveredPoint.y - 38;
-        tooltipTransform = `translate(${tooltipX}, ${tooltipY})`;
-    }
-
-    return (
-        <div 
-            className="relative"
-            ref={containerRef}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-        >
-            <svg width="100%" height="148" viewBox="-3 0 478 150" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                <defs>
-                    <linearGradient id={gradientId} x1={width / 2} y1="0" x2={width / 2} y2={height} gradientUnits="userSpaceOnUse">
-                        <stop stopColor={isDarkMode ? "#374151" : "#e9ecef"} />
-                        <stop offset="1" stopColor={isDarkMode ? "#374151" : "#f8f9fa"} stopOpacity="0" />
-                    </linearGradient>
-                </defs>
-                <path className="animate-fade-in" d={fillPath} fill={`url(#${gradientId})`} style={{animationDelay: '0.5s', animationFillMode: 'backwards'}} />
-                <path
-                    ref={pathRef}
-                    className="animate-draw"
-                    d={linePath}
-                    stroke={isDarkMode ? "#9ca3af" : "#4b5563"}
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    fill="none"
-                    strokeDasharray={pathLength}
-                    strokeDashoffset={pathLength}
-                />
-                {hoveredPoint && (
-                    <g>
-                        <line
-                            x1={hoveredPoint.x}
-                            y1="0"
-                            x2={hoveredPoint.x}
-                            y2={height}
-                            stroke={isDarkMode ? "#4b5563" : "#d1d5db"}
-                            strokeWidth="1"
-                            strokeDasharray="3,3"
-                        />
-                        <circle
-                            cx={hoveredPoint.x}
-                            cy={hoveredPoint.y}
-                            r="5"
-                            fill={isDarkMode ? "#60a5fa" : "#2563eb"}
-                            stroke={isDarkMode ? '#111827' : '#f9fafb'}
-                            strokeWidth="2"
-                        />
-                         <g transform={tooltipTransform}>
-                            <rect
-                                width="60"
-                                height="24"
-                                rx="4"
-                                fill={isDarkMode ? "rgba(17, 24, 39, 0.85)" : "rgba(255, 255, 255, 0.9)"}
-                                stroke={isDarkMode ? "#4b5563" : "#d1d5db"}
-                            />
-                            <text
-                                x="30"
-                                y="16"
-                                fill={isDarkMode ? '#e5e7eb' : '#1f2937'}
-                                fontSize="12"
-                                fontWeight="bold"
-                                textAnchor="middle"
-                            >
-                                {hoveredPoint.value}
-                            </text>
-                        </g>
-                    </g>
-                )}
+        const MoonIcon = ({ size = 24, className = '' }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        );
+        const SunIcon = ({ size = 24, className = '' }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+        );
+        const ChevronDownIcon = ({ size = 24, className = '' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"></path></svg>
+        );
+        const MapPinIcon = ({ size = 24, className = '' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        );
+        const XIcon = ({ size = 24, className = '' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        );
+        const AquaTrackLogo = ({ className = '' }) => (
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+                <path fillRule="evenodd" clipRule="evenodd" d="M39.475 21.6262C40.358 21.4363 40.6863 21.5589 40.7581 21.5934C40.7876 21.655 40.8547 21.857 40.8082 22.3336C40.7408 23.0255 40.4502 24.0046 39.8572 25.2301C38.6799 27.6631 36.5085 30.6631 33.5858 33.5858C30.6631 36.5085 27.6632 38.6799 25.2301 39.8572C24.0046 40.4502 23.0255 40.7407 22.3336 40.8082C21.8571 40.8547 21.6551 40.7875 21.5934 40.7581C21.5589 40.6863 21.4363 40.358 21.6262 39.475C21.8562 38.4054 22.4689 36.9657 23.5038 35.2817C24.7575 33.2417 26.5497 30.9744 28.7621 28.762C30.9744 26.5497 33.2417 24.7574 35.2817 23.5037C36.9657 22.4689 38.4054 21.8562 39.475 21.6262ZM4.41189 29.2403L18.7597 43.5881C19.8813 44.7097 21.4027 44.9179 22.7217 44.7893C24.0585 44.659 25.5148 44.1631 26.9723 43.4579C29.9052 42.0387 33.2618 39.5667 36.4142 36.4142C39.5667 33.2618 42.0387 29.9052 43.4579 26.9723C44.1631 25.5148 44.659 24.0585 44.7893 22.7217C44.9179 21.4027 44.7097 19.8813 43.5881 18.7597L29.2403 4.41187C27.8527 3.02428 25.8765 3.02573 24.2861 3.36776C22.6081 3.72863 20.7334 4.58419 18.8396 5.74801C16.4978 7.18716 13.9881 9.18353 11.5858 11.5858C9.18354 13.988 7.18717 16.4978 5.74802 18.8396C4.58421 20.7334 3.72865 22.6081 3.36778 24.2861C3.02574 25.8765 3.02429 27.8527 4.41189 29.2403Z" fill="currentColor" />
             </svg>
-        </div>
-    );
-};
+        );
 
+        // --- Initial Data Structure & Configuration ---
+        const initialData = {
+            'ESP32 Sensor Hub': {
+                current: {
+                    parameters: [
+                        { name: 'pH', value: '...', change: '...', isPositive: true, unit: '', history: [] },
+                        { name: 'Turbidity', value: '...', change: '...', isPositive: false, unit: 'NTU', history: [] },
+                        { name: 'TDS', value: '...', change: '...', isPositive: true, unit: 'ppm', history: [] },
+                        { name: 'Temperature', value: '...', change: '...', isPositive: true, unit: '°C', history: [] },
+                        { name: 'WQI', value: '...', change: '...', isPositive: true, unit: '', history: [] }
+                    ],
+                    alerts: [],
+                    reports: [{ name: 'Weekly Engineering Report', date: '2025-06-18', status: 'Generated' }],
+                },
+                past: { 'Last 24 Hours': { parameters: [], alerts: [], reports: [] } }
+            },
+        };
 
-const Header = ({ selectedLocation, locationsData, setSelectedLocation, isLocationDropdownOpen, setIsLocationDropdownOpen, locationDropdownRef, setDataType, dataType, setActiveTab, activeTab, handleIconClick, rotatingButton, setIsDarkMode, isDarkMode }) => (
-    <header className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3 bg-white dark:bg-gray-900 sticky top-0 z-20">
-         <div className="flex items-center gap-6">
-            <div className="group flex items-center gap-3 cursor-pointer">
-                <AquaTrackLogo className="w-6 h-6 text-blue-500 transition-all duration-300 group-hover:text-blue-400 group-hover:drop-shadow-[0_0_4px_rgba(59,130,246,0.7)]" />
-                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 transition-colors duration-300 group-hover:text-blue-500 dark:group-hover:text-blue-400">
-                    AquaTrack
-                </h2>
-            </div>
-            <div className="relative" ref={locationDropdownRef}>
-                <button onClick={() => setIsLocationDropdownOpen(prev => !prev)} className="flex items-center gap-2 h-full px-3 py-1 text-sm font-medium rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">
-                    <MapPinIcon size={16} />
-                    {selectedLocation}
-                    <ChevronDownIcon size={16} className={`transition-transform duration-200 ${isLocationDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {isLocationDropdownOpen && (
-                    <div className="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
-                        <div className="p-1">
-                            {Object.keys(locationsData).map(loc => (
-                                <a key={loc} href="#" onClick={(e) => { e.preventDefault(); setSelectedLocation(loc); setIsLocationDropdownOpen(false); }} className="block rounded-md px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                    {loc}
-                                </a>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-        <div className="flex flex-1 justify-end items-center gap-4">
-            <div className="flex items-center gap-2 rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
-                <button onClick={() => setDataType('Current')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${dataType === 'Current' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>Current Data</button>
-                <button onClick={() => setDataType('Past')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${dataType === 'Past' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>Past Data</button>
-            </div>
-            <div className="flex items-center gap-2">
-                 <div className="relative group">
-                    <button onClick={() => { setActiveTab(activeTab === 'Settings' ? 'Parameters' : 'Settings'); handleIconClick('settings'); }} className={`flex items-center justify-center rounded-full h-10 w-10 transition-colors ${activeTab === 'Settings' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200'} hover:bg-gray-200 dark:hover:bg-gray-600 ${rotatingButton === 'settings' ? 'animate-rotate' : ''}`}>
-                        <SettingsIcon size={20} />
-                    </button>
-                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none">Settings</span>
-                 </div>
-                 <div className="relative group">
-                    <button onClick={() => { setIsDarkMode(!isDarkMode); handleIconClick('theme'); }} className={`flex items-center justify-center rounded-full h-10 w-10 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${rotatingButton === 'theme' ? 'animate-rotate' : ''}`}>
-                        {isDarkMode ? <SunIcon size={20} /> : <MoonIcon size={20} />}
-                    </button>
-                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none">{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
-                 </div>
-            </div>
-        </div>
-    </header>
-);
-
-// --- Main App Component ---
-export default function App() {
-    // State Management
-    const [locationsData, setLocationsData] = useState(initialData);
-    const [selectedLocation, setSelectedLocation] = useState('ESP32 Sensor Hub');
-    const [activeTab, setActiveTab] = useState('Parameters');
-    const [dataType, setDataType] = useState('Current');
-    const [isDarkMode, setIsDarkMode] = useState(false);
-    
-    // UI State
-    const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
-    const [rotatingButton, setRotatingButton] = useState(null);
-    const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
-
-    // Settings State
-    const [settings, setSettings] = useState({ autoRefresh: true, emailNotifications: true, smsAlerts: false });
-    const [thresholds, setThresholds] = useState({ phMin: 6.5, phMax: 8.5, turbidityMax: 5, tdsMax: 500 });
-
-    const locationDropdownRef = useRef(null);
-    useClickOutside(locationDropdownRef, () => setIsLocationDropdownOpen(false));
-
-    // --- Data Fetching Effect ---
-    useEffect(() => {
-        const fetchThingSpeakData = async () => {
-            if (dataType !== 'Current' || !settings.autoRefresh) return;
-
-            const url = `https://api.thingspeak.com/channels/${thingSpeakConfig.channelId}/feeds.json?api_key=${thingSpeakConfig.apiKey}&results=40`;
-            
-            try {
-                const response = await fetch(url, { cache: 'no-cache' });
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                
-                const data = await response.json();
-                const feeds = data.feeds;
-
-                if (feeds && feeds.length > 0) {
-                    // Update Parameters
-                    const currentParams = initialData[selectedLocation].current.parameters;
-                    const newParameters = currentParams.map(param => {
-                        const fieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(key => thingSpeakConfig.fieldMapping[key] === param.name);
-                        if (!fieldKey) return param;
-
-                        const history = feeds.map(feed => parseFloat(feed[fieldKey])).filter(value => !isNaN(value) && value !== null);
-
-                        if (history.length > 0) {
-                            const newValue = history[history.length - 1];
-                            const prevValue = history.length > 1 ? history[history.length - 2] : newValue;
-                            let change = prevValue !== 0 ? (((newValue - prevValue) / Math.abs(prevValue)) * 100) : 0;
-                           
-                            return { ...param, value: newValue.toFixed(2), history, change: `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`, isPositive: change >= 0 };
-                        }
-                        return param;
-                    });
-                    
-                    // --- New Alert Logic ---
-                    const latestFeed = feeds[feeds.length - 1];
-                    const newPotentialAlerts = [];
-                    const phValue = parseFloat(latestFeed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'pH')]);
-                    const turbidityValue = parseFloat(latestFeed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'Turbidity')]);
-                    const tdsValue = parseFloat(latestFeed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'TDS')]);
-
-                    if (!isNaN(phValue) && (phValue < thresholds.phMin || phValue > thresholds.phMax)) {
-                        newPotentialAlerts.push({ type: 'Warning', message: `pH level (${phValue.toFixed(2)}) is out of the safe range (${thresholds.phMin} - ${thresholds.phMax}).`, time: latestFeed.created_at, severity: 'medium' });
-                    }
-                    if (!isNaN(turbidityValue) && turbidityValue > thresholds.turbidityMax) {
-                        newPotentialAlerts.push({ type: 'Warning', message: `High turbidity detected: ${turbidityValue.toFixed(2)} NTU (Max: ${thresholds.turbidityMax}).`, time: latestFeed.created_at, severity: 'medium' });
-                    }
-                    if (!isNaN(tdsValue) && tdsValue > thresholds.tdsMax) {
-                        newPotentialAlerts.push({ type: 'Warning', message: `High TDS detected: ${tdsValue.toFixed(2)} ppm (Max: ${thresholds.tdsMax}).`, time: latestFeed.created_at, severity: 'high' });
-                    }
-
-                    setLocationsData(prevData => {
-                        const existingAlerts = prevData[selectedLocation].current.alerts.filter(a => a.severity !== 'low');
-                        
-                        const allAlerts = [...newPotentialAlerts, ...existingAlerts];
-                        const uniqueAlertsMap = new Map();
-                        allAlerts.forEach(alert => {
-                            if (!uniqueAlertsMap.has(alert.message)) {
-                                uniqueAlertsMap.set(alert.message, { ...alert, id: alert.id || `${alert.message}-${alert.time}` });
-                            }
-                        });
-                        let finalAlerts = Array.from(uniqueAlertsMap.values());
-
-                        if (finalAlerts.length > 15) finalAlerts = finalAlerts.slice(0, 15);
-
-                        if (finalAlerts.length === 0) {
-                            finalAlerts.push({ id: `info-${Date.now()}`, type: 'Info', message: 'All systems normal. Water quality is within safe limits.', time: latestFeed.created_at, severity: 'low' });
-                        }
-
-                        return {
-                            ...prevData,
-                            [selectedLocation]: {
-                                ...prevData[selectedLocation],
-                                current: { ...prevData[selectedLocation].current, parameters: newParameters, alerts: finalAlerts }
-                            }
-                        };
-                    });
-                }
-            } catch (error) {
-                console.error("Failed to fetch ThingSpeak data:", error);
+        const thingSpeakConfig = {
+            channelId: '2971437',
+            apiKey: 'NUACMFTOOWWV7X5Y',
+            fieldMapping: {
+                'field4': 'pH', 
+                'field3': 'Turbidity', 
+                'field2': 'TDS',
+                'field1': 'Temperature', 
+                'field5': 'WQI',
             }
         };
 
-        fetchThingSpeakData();
-        const intervalId = setInterval(fetchThingSpeakData, 20000); // Refresh every 20 seconds
-        return () => clearInterval(intervalId);
-    }, [selectedLocation, dataType, thresholds, settings.autoRefresh]);
+        // --- Utility Functions ---
+        const formatTimeAgo = (isoString) => {
+            if (!isoString) return 'a while ago';
+            const date = new Date(isoString);
+            const now = new Date();
+            const seconds = Math.round((now - date) / 1000);
+            const minutes = Math.round(seconds / 60);
+            const hours = Math.round(minutes / 60);
+            const days = Math.round(hours / 24);
 
-    // --- Dark Mode Effect ---
-    useEffect(() => {
-        document.documentElement.classList.toggle('dark', isDarkMode);
-    }, [isDarkMode]);
+            if (seconds < 60) return "Just now";
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            return `${days}d ago`;
+        };
 
-    // --- Event Handlers ---
-    const handleIconClick = (buttonName) => {
-        setRotatingButton(buttonName);
-        setTimeout(() => setRotatingButton(null), 500);
-    };
-    
-    const handleSaveSettings = () => {
-        setShowSaveConfirmation(true);
-        setTimeout(() => setShowSaveConfirmation(false), 3000);
-    };
-    
-    const handleThresholdChange = (e) => {
-        const { name, value } = e.target;
-        setThresholds(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
-    };
+        // --- Custom Hooks ---
+        const useClickOutside = (ref, handler) => {
+            useEffect(() => {
+                const listener = (event) => {
+                    if (!ref.current || ref.current.contains(event.target)) return;
+                    handler(event);
+                };
+                document.addEventListener('mousedown', listener);
+                document.addEventListener('touchstart', listener);
+                return () => {
+                    document.removeEventListener('mousedown', listener);
+                    document.removeEventListener('touchstart', listener);
+                };
+            }, [ref, handler]);
+        };
 
-    const handleCloseAlert = (alertId) => {
-        setLocationsData(prevData => {
-            const updatedAlerts = prevData[selectedLocation].current.alerts.filter(alert => alert.id !== alertId);
-            return {
-                ...prevData,
-                [selectedLocation]: {
-                    ...prevData[selectedLocation],
-                    current: {
-                        ...prevData[selectedLocation].current,
-                        alerts: updatedAlerts.length > 0 ? updatedAlerts : [{ id: `info-${Date.now()}`, type: 'Info', message: 'All systems normal. Water quality is within safe limits.', time: new Date().toISOString(), severity: 'low' }]
-                    }
+        // --- Child Components ---
+        const ChartSVG = ({ data = [], isDarkMode }) => {
+            const pathRef = useRef(null);
+            const containerRef = useRef(null);
+            const [pathLength, setPathLength] = useState(0);
+            const [hoveredPoint, setHoveredPoint] = useState(null);
+
+            const hasData = data && data.length >= 2;
+
+            useLayoutEffect(() => {
+                if (hasData && pathRef.current) {
+                    const length = pathRef.current.getTotalLength();
+                    setPathLength(length);
+                }
+            }, [data, hasData]);
+            
+            const width = 472;
+            const height = 149;
+            const padding = 5;
+
+            const scalePoint = (value, index) => {
+                const maxVal = Math.max(...data);
+                const minVal = Math.min(...data);
+                const valueRange = maxVal - minVal || 1;
+                const x = (index / (data.length - 1)) * width;
+                const yRatio = (maxVal - value) / valueRange;
+                const y = (yRatio * (height - (padding * 2))) + padding;
+                return { x, y };
+            };
+
+            const handleMouseMove = (event) => {
+                if (!hasData || !containerRef.current) return;
+                const rect = containerRef.current.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                
+                const xRatio = Math.max(0, Math.min(1, mouseX / rect.width));
+                const pointIndex = Math.round(xRatio * (data.length - 1));
+                
+                const pointValue = data[pointIndex];
+                if (pointValue !== undefined) {
+                    const { x, y } = scalePoint(pointValue, pointIndex);
+                    setHoveredPoint({
+                        value: pointValue.toFixed(2),
+                        x,
+                        y,
+                    });
                 }
             };
-        });
-    };
 
-    // --- Render Logic ---
-    const dataForLocation = locationsData[selectedLocation];
-    const isCurrent = dataType === 'Current';
-    const activeData = isCurrent ? dataForLocation.current : (dataForLocation.past['Last 24 Hours'] || {});
-    const parameters = activeData.parameters || [];
-    const alerts = activeData.alerts || [];
-    const reports = activeData.reports || [];
+            const handleMouseLeave = () => {
+                setHoveredPoint(null);
+            };
 
-    return (
-        <div className="bg-gray-50 dark:bg-gray-950 min-h-screen font-sans" style={{ fontFamily: "'Inter', sans-serif" }}>
-             <style>{`
-              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
-              @keyframes rotate-360 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-              .animate-rotate { animation: rotate-360 0.5s ease-in-out; }
-              @keyframes draw { to { stroke-dashoffset: 0; } }
-              .animate-draw { animation: draw 1.5s ease-out forwards; }
-              @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-              .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
-              @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-              .animate-fadeInUp { animation: fadeInUp 0.5s ease-out forwards; }
-            `}</style>
-
-            <Header 
-              selectedLocation={selectedLocation} 
-              locationsData={locationsData}
-              setSelectedLocation={setSelectedLocation}
-              isLocationDropdownOpen={isLocationDropdownOpen}
-              setIsLocationDropdownOpen={setIsLocationDropdownOpen}
-              locationDropdownRef={locationDropdownRef}
-              setDataType={setDataType}
-              dataType={dataType}
-              setActiveTab={setActiveTab}
-              activeTab={activeTab}
-              handleIconClick={handleIconClick}
-              rotatingButton={rotatingButton}
-              setIsDarkMode={setIsDarkMode}
-              isDarkMode={isDarkMode}
-            />
-
-            <main className="flex-1 px-4 sm:px-6 lg:px-10 py-5">
-                <div className="w-full max-w-7xl mx-auto">
-                    <h1 className="text-gray-900 dark:text-white text-3xl font-bold p-4">Water Quality Monitoring</h1>
-                    
-                    <div className="border-b border-gray-300 dark:border-gray-700 px-4">
-                        <nav className="flex gap-8">
-                            {['Parameters', 'Alerts', 'Reports'].map((tab) => (
-                                <button key={tab} onClick={() => setActiveTab(tab)} className={`relative group pb-4 pt-4 text-sm font-bold transition-colors ${activeTab === tab ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'}`}>
-                                    <span>{tab}</span>
-                                    <span className={`absolute bottom-0 left-0 h-0.5 bg-blue-500 dark:bg-blue-400 transition-all duration-300 ${activeTab === tab ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
-                                 </button>
-                            ))}
-                        </nav>
+            if (!hasData) {
+                return (
+                    <div className="relative w-full h-[148px]">
+                        <svg width="100%" height="100%" viewBox="-3 0 478 150" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                             <path d="M -3,75 L 475,75" stroke={isDarkMode ? "#4b5563" : "#d1d5db"} strokeWidth="3" strokeDasharray="5,5" strokeLinecap="round" />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <p className="text-gray-400 dark:text-gray-500 text-sm">Loading graph data...</p>
+                        </div>
                     </div>
+                );
+            }
 
-                    <div className="py-6">
-                         {activeTab === 'Parameters' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 px-4">
-                                {parameters.map((param, index) => (
-                                    <div key={param.name} className="flex flex-col gap-2 rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800 shadow-sm animate-fadeInUp" style={{animationDelay: `${index * 100}ms`}}>
-                                        <p className="text-gray-900 dark:text-gray-100 font-medium">{param.name}</p>
-                                        <p className="text-gray-900 dark:text-white text-3xl font-bold">{param.value}{param.unit}</p>
-                                        <div className="flex gap-1 text-sm">
-                                            <p className="text-gray-500 dark:text-gray-400">vs previous reading</p>
-                                            <p className={`font-medium ${param.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{param.change}</p>
-                                        </div>
-                                        <div className="flex flex-col flex-1 gap-2 pt-4 min-h-[180px]">
-                                            <ChartSVG data={param.history} isDarkMode={isDarkMode} />
-                                            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 font-bold">
-                                                <span>Earlier</span><span>Later</span>
+            const linePath = data.map((point, index) => {
+                const { x, y } = scalePoint(point, index);
+                return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)},${y.toFixed(2)}`;
+            }).join(' ');
+
+            const { x: firstX } = scalePoint(data[0], 0);
+            const fillPath = `${linePath} V ${height} L ${firstX.toFixed(2)},${height} Z`;
+            const gradientId = `chart_gradient_${isDarkMode}`;
+            
+            let tooltipTransform = '';
+            if (hoveredPoint) {
+                const tooltipX = hoveredPoint.x > width / 2 ? hoveredPoint.x - 75 : hoveredPoint.x + 15;
+                const tooltipY = hoveredPoint.y < 40 ? hoveredPoint.y + 15 : hoveredPoint.y - 38;
+                tooltipTransform = `translate(${tooltipX}, ${tooltipY})`;
+            }
+
+            return (
+                <div 
+                    className="relative"
+                    ref={containerRef}
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleMouseLeave}
+                >
+                    <svg width="100%" height="148" viewBox="-3 0 478 150" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id={gradientId} x1={width / 2} y1="0" x2={width / 2} y2={height} gradientUnits="userSpaceOnUse">
+                                <stop stopColor={isDarkMode ? "#374151" : "#e9ecef"} />
+                                <stop offset="1" stopColor={isDarkMode ? "#374151" : "#f8f9fa"} stopOpacity="0" />
+                            </linearGradient>
+                        </defs>
+                        <path className="animate-fade-in" d={fillPath} fill={`url(#${gradientId})`} style={{animationDelay: '0.5s', animationFillMode: 'backwards'}} />
+                        <path
+                            ref={pathRef}
+                            className="animate-draw"
+                            d={linePath}
+                            stroke={isDarkMode ? "#9ca3af" : "#4b5563"}
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            fill="none"
+                            strokeDasharray={pathLength}
+                            strokeDashoffset={pathLength}
+                        />
+                        {hoveredPoint && (
+                            <g>
+                                <line
+                                    x1={hoveredPoint.x}
+                                    y1="0"
+                                    x2={hoveredPoint.x}
+                                    y2={height}
+                                    stroke={isDarkMode ? "#4b5563" : "#d1d5db"}
+                                    strokeWidth="1"
+                                    strokeDasharray="3,3"
+                                />
+                                <circle
+                                    cx={hoveredPoint.x}
+                                    cy={hoveredPoint.y}
+                                    r="5"
+                                    fill={isDarkMode ? "#60a5fa" : "#2563eb"}
+                                    stroke={isDarkMode ? '#111827' : '#f9fafb'}
+                                    strokeWidth="2"
+                                />
+                                 <g transform={tooltipTransform}>
+                                    <rect
+                                        width="60"
+                                        height="24"
+                                        rx="4"
+                                        fill={isDarkMode ? "rgba(17, 24, 39, 0.85)" : "rgba(255, 255, 255, 0.9)"}
+                                        stroke={isDarkMode ? "#4b5563" : "#d1d5db"}
+                                    />
+                                    <text
+                                        x="30"
+                                        y="16"
+                                        fill={isDarkMode ? '#e5e7eb' : '#1f2937'}
+                                        fontSize="12"
+                                        fontWeight="bold"
+                                        textAnchor="middle"
+                                    >
+                                        {hoveredPoint.value}
+                                    </text>
+                                </g>
+                            </g>
+                        )}
+                    </svg>
+                </div>
+            );
+        };
+
+        const Header = ({ selectedLocation, locationsData, setSelectedLocation, isLocationDropdownOpen, setIsLocationDropdownOpen, locationDropdownRef, setDataType, dataType, setActiveTab, activeTab, handleIconClick, rotatingButton, setIsDarkMode, isDarkMode }) => (
+            <header className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3 bg-white dark:bg-gray-900 sticky top-0 z-20">
+                 <div className="flex items-center gap-6">
+                    <div className="group flex items-center gap-3 cursor-pointer">
+                        <AquaTrackLogo className="w-6 h-6 text-blue-500 transition-all duration-300 group-hover:text-blue-400 group-hover:drop-shadow-[0_0_4px_rgba(59,130,246,0.7)]" />
+                        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 transition-colors duration-300 group-hover:text-blue-500 dark:group-hover:text-blue-400">
+                            AquaTrack
+                        </h2>
+                    </div>
+                    <div className="relative" ref={locationDropdownRef}>
+                        <button onClick={() => setIsLocationDropdownOpen(prev => !prev)} className="flex items-center gap-2 h-full px-3 py-1 text-sm font-medium rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">
+                            <MapPinIcon size={16} />
+                            {selectedLocation}
+                            <ChevronDownIcon size={16} className={`transition-transform duration-200 ${isLocationDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isLocationDropdownOpen && (
+                            <div className="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                                <div className="p-1">
+                                    {Object.keys(locationsData).map(loc => (
+                                        <a key={loc} href="#" onClick={(e) => { e.preventDefault(); setSelectedLocation(loc); setIsLocationDropdownOpen(false); }} className="block rounded-md px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                            {loc}
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <div className="flex flex-1 justify-end items-center gap-4">
+                    <div className="flex items-center gap-2 rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
+                        <button onClick={() => setDataType('Current')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${dataType === 'Current' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>Current Data</button>
+                        <button onClick={() => setDataType('Past')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${dataType === 'Past' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>Past Data</button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                         <div className="relative group">
+                            <button onClick={() => { setActiveTab(activeTab === 'Settings' ? 'Parameters' : 'Settings'); handleIconClick('settings'); }} className={`flex items-center justify-center rounded-full h-10 w-10 transition-colors ${activeTab === 'Settings' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200'} hover:bg-gray-200 dark:hover:bg-gray-600 ${rotatingButton === 'settings' ? 'animate-rotate' : ''}`}>
+                                <SettingsIcon size={20} />
+                            </button>
+                            <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none">Settings</span>
+                         </div>
+                         <div className="relative group">
+                            <button onClick={() => { setIsDarkMode(!isDarkMode); handleIconClick('theme'); }} className={`flex items-center justify-center rounded-full h-10 w-10 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${rotatingButton === 'theme' ? 'animate-rotate' : ''}`}>
+                                {isDarkMode ? <SunIcon size={20} /> : <MoonIcon size={20} />}
+                            </button>
+                            <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none">{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                         </div>
+                    </div>
+                </div>
+            </header>
+        );
+
+        // --- Main App Component ---
+        function App() {
+            // State Management
+            const [locationsData, setLocationsData] = useState(initialData);
+            const [selectedLocation, setSelectedLocation] = useState('ESP32 Sensor Hub');
+            const [activeTab, setActiveTab] = useState('Parameters');
+            const [dataType, setDataType] = useState('Current');
+            const [isDarkMode, setIsDarkMode] = useState(false);
+            
+            // UI State
+            const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
+            const [rotatingButton, setRotatingButton] = useState(null);
+            const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
+
+            // Settings State
+            const [settings, setSettings] = useState({ autoRefresh: true, emailNotifications: true, smsAlerts: false });
+            const [thresholds, setThresholds] = useState({ phMin: 6.5, phMax: 8.5, turbidityMax: 5, tdsMax: 500 });
+
+            const locationDropdownRef = useRef(null);
+            useClickOutside(locationDropdownRef, () => setIsLocationDropdownOpen(false));
+
+            // --- Data Fetching Effect ---
+            useEffect(() => {
+                const fetchThingSpeakData = async () => {
+                    if (dataType !== 'Current' || !settings.autoRefresh) return;
+
+                    const url = `https://api.thingspeak.com/channels/${thingSpeakConfig.channelId}/feeds.json?api_key=${thingSpeakConfig.apiKey}&results=40`;
+                    
+                    try {
+                        const response = await fetch(url, { cache: 'no-cache' });
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        
+                        const data = await response.json();
+                        const feeds = data.feeds;
+
+                        if (feeds && feeds.length > 0) {
+                            const currentParams = initialData[selectedLocation].current.parameters;
+                            const newParameters = currentParams.map(param => {
+                                const fieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(key => thingSpeakConfig.fieldMapping[key] === param.name);
+                                if (!fieldKey) return param;
+
+                                const history = feeds.map(feed => parseFloat(feed[fieldKey])).filter(value => !isNaN(value) && value !== null);
+
+                                if (history.length > 0) {
+                                    const newValue = history[history.length - 1];
+                                    const prevValue = history.length > 1 ? history[history.length - 2] : newValue;
+                                    let change = prevValue !== 0 ? (((newValue - prevValue) / Math.abs(prevValue)) * 100) : 0;
+                                   
+                                    return { ...param, value: newValue.toFixed(2), history, change: `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`, isPositive: change >= 0 };
+                                }
+                                return param;
+                            });
+                            
+                            const latestFeed = feeds[feeds.length - 1];
+                            const newPotentialAlerts = [];
+                            const phValue = parseFloat(latestFeed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'pH')]);
+                            const turbidityValue = parseFloat(latestFeed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'Turbidity')]);
+                            const tdsValue = parseFloat(latestFeed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'TDS')]);
+
+                            if (!isNaN(phValue) && (phValue < thresholds.phMin || phValue > thresholds.phMax)) {
+                                newPotentialAlerts.push({ type: 'Warning', message: `pH level (${phValue.toFixed(2)}) is out of range (${thresholds.phMin}-${thresholds.phMax}).`, time: latestFeed.created_at, severity: 'medium' });
+                            }
+                            if (!isNaN(turbidityValue) && turbidityValue > thresholds.turbidityMax) {
+                                newPotentialAlerts.push({ type: 'Warning', message: `High turbidity: ${turbidityValue.toFixed(2)} NTU (Max: ${thresholds.turbidityMax}).`, time: latestFeed.created_at, severity: 'medium' });
+                            }
+                            if (!isNaN(tdsValue) && tdsValue > thresholds.tdsMax) {
+                                newPotentialAlerts.push({ type: 'Warning', message: `High TDS: ${tdsValue.toFixed(2)} ppm (Max: ${thresholds.tdsMax}).`, time: latestFeed.created_at, severity: 'high' });
+                            }
+
+                            setLocationsData(prevData => {
+                                const existingAlerts = prevData[selectedLocation].current.alerts.filter(a => a.severity !== 'low');
+                                const allAlerts = [...newPotentialAlerts, ...existingAlerts];
+                                const uniqueAlertsMap = new Map();
+                                allAlerts.forEach(alert => {
+                                    if (!uniqueAlertsMap.has(alert.message)) {
+                                        uniqueAlertsMap.set(alert.message, { ...alert, id: alert.id || `${alert.message}-${alert.time}` });
+                                    }
+                                });
+                                let finalAlerts = Array.from(uniqueAlertsMap.values());
+                                if (finalAlerts.length > 15) finalAlerts = finalAlerts.slice(0, 15);
+
+                                if (finalAlerts.length === 0 && newPotentialAlerts.length === 0) {
+                                    finalAlerts.push({ id: `info-${Date.now()}`, type: 'Info', message: 'All systems normal. Water quality is within safe limits.', time: latestFeed.created_at, severity: 'low' });
+                                }
+
+                                return {
+                                    ...prevData,
+                                    [selectedLocation]: {
+                                        ...prevData[selectedLocation],
+                                        current: { ...prevData[selectedLocation].current, parameters: newParameters, alerts: finalAlerts }
+                                    }
+                                };
+                            });
+                        }
+                    } catch (error) {
+                        console.error("Failed to fetch ThingSpeak data:", error);
+                    }
+                };
+
+                fetchThingSpeakData();
+                const intervalId = setInterval(fetchThingSpeakData, 20000);
+                return () => clearInterval(intervalId);
+            }, [selectedLocation, dataType, thresholds, settings.autoRefresh]);
+
+            // --- Dark Mode Effect ---
+            useEffect(() => {
+                document.documentElement.classList.toggle('dark', isDarkMode);
+            }, [isDarkMode]);
+
+            // --- Event Handlers ---
+            const handleIconClick = (buttonName) => {
+                setRotatingButton(buttonName);
+                setTimeout(() => setRotatingButton(null), 500);
+            };
+            
+            const handleSaveSettings = () => {
+                setShowSaveConfirmation(true);
+                setTimeout(() => setShowSaveConfirmation(false), 3000);
+            };
+            
+            const handleThresholdChange = (e) => {
+                const { name, value } = e.target;
+                setThresholds(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
+            };
+
+            const handleCloseAlert = (alertId) => {
+                setLocationsData(prevData => {
+                    const updatedAlerts = prevData[selectedLocation].current.alerts.filter(alert => alert.id !== alertId);
+                    return {
+                        ...prevData,
+                        [selectedLocation]: {
+                            ...prevData[selectedLocation],
+                            current: {
+                                ...prevData[selectedLocation].current,
+                                alerts: updatedAlerts.length > 0 ? updatedAlerts : [{ id: `info-${Date.now()}`, type: 'Info', message: 'All systems normal. Water quality is within safe limits.', time: new Date().toISOString(), severity: 'low' }]
+                            }
+                        }
+                    };
+                });
+            };
+
+            // --- Render Logic ---
+            const dataForLocation = locationsData[selectedLocation];
+            const isCurrent = dataType === 'Current';
+            const activeData = isCurrent ? dataForLocation.current : (dataForLocation.past['Last 24 Hours'] || {});
+            const parameters = activeData.parameters || [];
+            const alerts = activeData.alerts || [];
+            const reports = activeData.reports || [];
+
+            return (
+                <div className="bg-gray-50 dark:bg-gray-950 min-h-screen">
+                    <Header 
+                      selectedLocation={selectedLocation} 
+                      locationsData={locationsData}
+                      setSelectedLocation={setSelectedLocation}
+                      isLocationDropdownOpen={isLocationDropdownOpen}
+                      setIsLocationDropdownOpen={setIsLocationDropdownOpen}
+                      locationDropdownRef={locationDropdownRef}
+                      setDataType={setDataType}
+                      dataType={dataType}
+                      setActiveTab={setActiveTab}
+                      activeTab={activeTab}
+                      handleIconClick={handleIconClick}
+                      rotatingButton={rotatingButton}
+                      setIsDarkMode={setIsDarkMode}
+                      isDarkMode={isDarkMode}
+                    />
+
+                    <main className="flex-1 px-4 sm:px-6 lg:px-10 py-5">
+                        <div className="w-full max-w-7xl mx-auto">
+                            <h1 className="text-gray-900 dark:text-white text-3xl font-bold p-4">Water Quality Monitoring</h1>
+                            
+                            <div className="border-b border-gray-300 dark:border-gray-700 px-4">
+                                <nav className="flex gap-8">
+                                    {['Parameters', 'Alerts', 'Reports', 'Settings'].map((tab) => (
+                                        <button key={tab} onClick={() => setActiveTab(tab)} className={`relative group pb-4 pt-4 text-sm font-bold transition-colors ${activeTab === tab ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'}`}>
+                                            <span>{tab}</span>
+                                            <span className={`absolute bottom-0 left-0 h-0.5 bg-blue-500 dark:bg-blue-400 transition-all duration-300 ${activeTab === tab ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+                                         </button>
+                                    ))}
+                                </nav>
+                            </div>
+
+                            <div className="py-6">
+                                 {activeTab === 'Parameters' && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 px-4">
+                                        {parameters.map((param, index) => (
+                                            <div key={param.name} className="flex flex-col gap-2 rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800 shadow-sm animate-fadeInUp" style={{animationDelay: `${index * 100}ms`}}>
+                                                <p className="text-gray-900 dark:text-gray-100 font-medium">{param.name}</p>
+                                                <p className="text-gray-900 dark:text-white text-3xl font-bold">{param.value}{param.unit}</p>
+                                                <div className="flex gap-1 text-sm">
+                                                    <p className="text-gray-500 dark:text-gray-400">vs previous reading</p>
+                                                    <p className={`font-medium ${param.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{param.change}</p>
+                                                </div>
+                                                <div className="flex flex-col flex-1 gap-2 pt-4 min-h-[180px]">
+                                                    <ChartSVG data={param.history} isDarkMode={isDarkMode} />
+                                                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 font-bold">
+                                                        <span>Earlier</span><span>Later</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                 )}
+                                 {activeTab === 'Alerts' && (
+                                     <div className="px-4 space-y-4">
+                                         {alerts.length > 0 ? alerts.map((alert, index) => (
+                                             <div key={alert.id} className="flex items-start justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 animate-fadeInUp" style={{animationDelay: `${index * 50}ms`}}>
+                                                 <div className="flex items-start gap-3">
+                                                     <div className={`w-3 h-3 rounded-full flex-shrink-0 mt-1.5 ${alert.severity === 'high' ? 'bg-red-500' : alert.severity === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'}`}></div>
+                                                     <div className="flex-1">
+                                                         <p className="text-gray-900 dark:text-gray-100 font-medium">{alert.type}</p>
+                                                         <p className="text-gray-600 dark:text-gray-300 text-sm">{alert.message}</p>
+                                                     </div>
+                                                 </div>
+                                                 <div className="flex items-center gap-4 pl-4">
+                                                    <p className="text-gray-500 dark:text-gray-400 text-sm whitespace-nowrap">{formatTimeAgo(alert.time)}</p>
+                                                    {alert.severity !== 'low' && (
+                                                        <button onClick={() => handleCloseAlert(alert.id)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                                                            <XIcon size={18} />
+                                                        </button>
+                                                    )}
+                                                 </div>
+                                             </div>
+                                         )) : <p className="text-center p-10 text-gray-500 dark:text-gray-400">No active alerts.</p>}
+                                     </div>
+                                 )}
+                                 {activeTab === 'Reports' && (
+                                    <div className="px-4 space-y-4">
+                                         {reports.length > 0 ? reports.map((report, index) => (
+                                             <div key={index} className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 animate-fadeInUp" style={{animationDelay: `${index * 100}ms`}}>
+                                                 <div>
+                                                     <p className="text-gray-900 dark:text-gray-100 font-medium">{report.name}</p>
+                                                     <p className="text-gray-600 dark:text-gray-300 text-sm">Generated on {report.date}</p>
+                                                 </div>
+                                                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${report.status === 'Generated' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}>{report.status}</span>
+                                             </div>
+                                         )) : <p className="text-center p-10 text-gray-500 dark:text-gray-400">No reports generated yet.</p>}
+                                    </div>
+                                 )}
+                                 {activeTab === 'Settings' && (
+                                    <div className="px-4 max-w-2xl mx-auto animate-fadeInUp">
+                                        <div className="space-y-6">
+                                            <div className="p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                                <h3 className="text-lg text-gray-900 dark:text-gray-100 font-medium mb-4">Monitoring Settings</h3>
+                                                <div className="space-y-4">
+                                                    <label className="flex items-center justify-between cursor-pointer"><span className="text-gray-700 dark:text-gray-300">Auto-refresh data</span><input type="checkbox" name="autoRefresh" checked={settings.autoRefresh} onChange={(e) => setSettings(p => ({...p, autoRefresh: e.target.checked}))} className="rounded text-blue-500 focus:ring-blue-500" /></label>
+                                                    <label className="flex items-center justify-between cursor-pointer"><span className="text-gray-700 dark:text-gray-300">Email notifications</span><input type="checkbox" name="emailNotifications" checked={settings.emailNotifications} onChange={(e) => setSettings(p => ({...p, emailNotifications: e.target.checked}))} className="rounded text-blue-500 focus:ring-blue-500" /></label>
+                                                    <label className="flex items-center justify-between cursor-pointer"><span className="text-gray-700 dark:text-gray-300">SMS alerts</span><input type="checkbox" name="smsAlerts" checked={settings.smsAlerts} onChange={(e) => setSettings(p => ({...p, smsAlerts: e.target.checked}))} className="rounded text-blue-500 focus:ring-blue-500" /></label>
+                                                </div>
+                                            </div>
+                                            <div className="p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                                <h3 className="text-lg text-gray-900 dark:text-gray-100 font-medium mb-4">Threshold Values</h3>
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between"><span className="text-gray-700 dark:text-gray-300">pH Min/Max</span><div className="flex gap-2"><input type="number" step="0.1" name="phMin" value={thresholds.phMin} onChange={handleThresholdChange} className="w-24 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" /><input type="number" step="0.1" name="phMax" value={thresholds.phMax} onChange={handleThresholdChange} className="w-24 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div></div>
+                                                    <div className="flex items-center justify-between"><span className="text-gray-700 dark:text-gray-300">Turbidity Max (NTU)</span><input type="number" step="0.1" name="turbidityMax" value={thresholds.turbidityMax} onChange={handleThresholdChange} className="w-24 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
+                                                    <div className="flex items-center justify-between"><span className="text-gray-700 dark:text-gray-300">TDS Max (ppm)</span><input type="number" name="tdsMax" value={thresholds.tdsMax} onChange={handleThresholdChange} className="w-24 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
+                                                </div>
+                                            </div>
+                                            <div className="relative pt-2">
+                                                <button onClick={handleSaveSettings} className="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition-colors">Save Settings</button>
+                                                {showSaveConfirmation && (<div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-max px-4 py-2 bg-gray-900 text-white text-sm rounded-md transition-opacity duration-300 animate-fadeInUp">Settings saved successfully!</div>)}
                                             </div>
                                         </div>
                                     </div>
-                                ))}
+                                 )}
                             </div>
-                         )}
-                         {activeTab === 'Alerts' && (
-                             <div className="px-4 space-y-4">
-                                 {alerts.length > 0 ? alerts.map((alert, index) => (
-                                     <div key={alert.id} className="flex items-start justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 animate-fadeInUp" style={{animationDelay: `${index * 50}ms`}}>
-                                         <div className="flex items-start gap-3">
-                                             <div className={`w-3 h-3 rounded-full flex-shrink-0 mt-1.5 ${alert.severity === 'high' ? 'bg-red-500' : alert.severity === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'}`}></div>
-                                             <div className="flex-1">
-                                                 <p className="text-gray-900 dark:text-gray-100 font-medium">{alert.type}</p>
-                                                 <p className="text-gray-600 dark:text-gray-300 text-sm">{alert.message}</p>
-                                             </div>
-                                         </div>
-                                         <div className="flex items-center gap-4 pl-4">
-                                            <p className="text-gray-500 dark:text-gray-400 text-sm whitespace-nowrap">{formatTimeAgo(alert.time)}</p>
-                                            {alert.severity !== 'low' && (
-                                                <button onClick={() => handleCloseAlert(alert.id)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                                                    <XIcon size={18} />
-                                                </button>
-                                            )}
-                                         </div>
-                                     </div>
-                                 )) : <p className="text-center p-10 text-gray-500 dark:text-gray-400">No alerts for this period.</p>}
-                             </div>
-                         )}
-                         {activeTab === 'Reports' && (
-                            <div className="px-4 space-y-4">
-                                 {reports.length > 0 ? reports.map((report, index) => (
-                                     <div key={index} className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 animate-fadeInUp" style={{animationDelay: `${index * 100}ms`}}>
-                                         <div>
-                                             <p className="text-gray-900 dark:text-gray-100 font-medium">{report.name}</p>
-                                             <p className="text-gray-600 dark:text-gray-300 text-sm">Generated on {report.date}</p>
-                                         </div>
-                                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${report.status === 'Generated' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}>{report.status}</span>
-                                     </div>
-                                 )) : <p className="text-center p-10 text-gray-500 dark:text-gray-400">No reports generated yet.</p>}
-                            </div>
-                         )}
-                         {activeTab === 'Settings' && (
-                            <div className="px-4 max-w-2xl mx-auto animate-fadeInUp">
-                                <div className="space-y-6">
-                                    <div className="p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                                        <h3 className="text-lg text-gray-900 dark:text-gray-100 font-medium mb-4">Monitoring Settings</h3>
-                                        <div className="space-y-4">
-                                            <label className="flex items-center justify-between cursor-pointer"><span className="text-gray-700 dark:text-gray-300">Auto-refresh data</span><input type="checkbox" name="autoRefresh" checked={settings.autoRefresh} onChange={(e) => setSettings(p => ({...p, autoRefresh: e.target.checked}))} className="rounded text-blue-500 focus:ring-blue-500" /></label>
-                                            <label className="flex items-center justify-between cursor-pointer"><span className="text-gray-700 dark:text-gray-300">Email notifications</span><input type="checkbox" name="emailNotifications" checked={settings.emailNotifications} onChange={(e) => setSettings(p => ({...p, emailNotifications: e.target.checked}))} className="rounded text-blue-500 focus:ring-blue-500" /></label>
-                                            <label className="flex items-center justify-between cursor-pointer"><span className="text-gray-700 dark:text-gray-300">SMS alerts</span><input type="checkbox" name="smsAlerts" checked={settings.smsAlerts} onChange={(e) => setSettings(p => ({...p, smsAlerts: e.target.checked}))} className="rounded text-blue-500 focus:ring-blue-500" /></label>
-                                        </div>
-                                    </div>
-                                    <div className="p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                                        <h3 className="text-lg text-gray-900 dark:text-gray-100 font-medium mb-4">Threshold Values</h3>
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between"><span className="text-gray-700 dark:text-gray-300">pH Min/Max</span><div className="flex gap-2"><input type="number" step="0.1" name="phMin" value={thresholds.phMin} onChange={handleThresholdChange} className="w-24 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" /><input type="number" step="0.1" name="phMax" value={thresholds.phMax} onChange={handleThresholdChange} className="w-24 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div></div>
-                                            <div className="flex items-center justify-between"><span className="text-gray-700 dark:text-gray-300">Turbidity Max (NTU)</span><input type="number" step="0.1" name="turbidityMax" value={thresholds.turbidityMax} onChange={handleThresholdChange} className="w-24 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
-                                            <div className="flex items-center justify-between"><span className="text-gray-700 dark:text-gray-300">TDS Max (ppm)</span><input type="number" name="tdsMax" value={thresholds.tdsMax} onChange={handleThresholdChange} className="w-24 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
-                                        </div>
-                                    </div>
-                                    <div className="relative pt-2">
-                                        <button onClick={handleSaveSettings} className="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition-colors">Save Settings</button>
-                                        {showSaveConfirmation && (<div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-max px-4 py-2 bg-gray-900 text-white text-sm rounded-md transition-opacity duration-300 animate-fadeInUp">Settings saved successfully!</div>)}
-                                    </div>
-                                </div>
-                            </div>
-                         )}
-                    </div>
+                        </div>
+                    </main>
                 </div>
-            </main>
-        </div>
-    );
-}
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
