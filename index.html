@@ -13,7 +13,7 @@
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- **FIX**: Configure Tailwind CSS for class-based dark mode AFTER loading the library -->
+    <!-- Configure Tailwind CSS for class-based dark mode -->
     <script>
       tailwind.config = {
         darkMode: 'class',
@@ -525,7 +525,7 @@
                             
                             <div className="border-b border-gray-300 dark:border-gray-700 px-4">
                                 <nav className="flex gap-8">
-                                    {['Parameters', 'Alerts', 'Reports', 'Settings'].map((tab) => (
+                                    {['Parameters', 'Alerts', 'Reports'].map((tab) => (
                                         <button key={tab} onClick={() => setActiveTab(tab)} className={`relative group pb-4 pt-4 text-sm font-bold transition-colors ${activeTab === tab ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'}`}>
                                             <span>{tab}</span>
                                             <span className={`absolute bottom-0 left-0 h-0.5 bg-blue-500 dark:bg-blue-400 transition-all duration-300 ${activeTab === tab ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
