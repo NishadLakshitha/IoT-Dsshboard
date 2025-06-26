@@ -80,7 +80,7 @@
 
     <!-- The entire React application is placed within this script tag -->
     <script type="text/babel">
-        const { useState, useEffect, useRef, useLayoutEffect } = React;
+        const { useState, useEffect, useRef, useLayoutEffect, useMemo } = React;
 
         // --- Icon Components (Inlined SVGs for portability) ---
         const SettingsIcon = ({ size = 24, className = '' }) => (
@@ -114,6 +114,9 @@
         const TargetIcon = ({ size = 24, className = '' }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
         );
+         const EyeIcon = ({ size = 24, className = '' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        );
         const AquaTrackLogo = ({ className = '' }) => (
             <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
                 <path fillRule="evenodd" clipRule="evenodd" d="M39.475 21.6262C40.358 21.4363 40.6863 21.5589 40.7581 21.5934C40.7876 21.655 40.8547 21.857 40.8082 22.3336C40.7408 23.0255 40.4502 24.0046 39.8572 25.2301C38.6799 27.6631 36.5085 30.6631 33.5858 33.5858C30.6631 36.5085 27.6632 38.6799 25.2301 39.8572C24.0046 40.4502 23.0255 40.7407 22.3336 40.8082C21.8571 40.8547 21.6551 40.7875 21.5934 40.7581C21.5589 40.6863 21.4363 40.358 21.6262 39.475C21.8562 38.4054 22.4689 36.9657 23.5038 35.2817C24.7575 33.2417 26.5497 30.9744 28.7621 28.762C30.9744 26.5497 33.2417 24.7574 35.2817 23.5037C36.9657 22.4689 38.4054 21.8562 39.475 21.6262ZM4.41189 29.2403L18.7597 43.5881C19.8813 44.7097 21.4027 44.9179 22.7217 44.7893C24.0585 44.659 25.5148 44.1631 26.9723 43.4579C29.9052 42.0387 33.2618 39.5667 36.4142 36.4142C39.5667 33.2618 42.0387 29.9052 43.4579 26.9723C44.1631 25.5148 44.659 24.0585 44.7893 22.7217C44.9179 21.4027 44.7097 19.8813 43.5881 18.7597L29.2403 4.41187C27.8527 3.02428 25.8765 3.02573 24.2861 3.36776C22.6081 3.72863 20.7334 4.58419 18.8396 5.74801C16.4978 7.18716 13.9881 9.18353 11.5858 11.5858C9.18354 13.988 7.18717 16.4978 5.74802 18.8396C4.58421 20.7334 3.72865 22.6081 3.36778 24.2861C3.02574 25.8765 3.02429 27.8527 4.41189 29.2403Z" fill="currentColor" />
@@ -124,16 +127,13 @@
         const formatDate = (date) => {
             return date.toISOString().split('T')[0];
         }
-
-        const formatDateTime = (date) => {
-            const year = date.getUTCFullYear();
-            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(date.getUTCDate()).padStart(2, '0');
-            const hours = String(date.getUTCHours()).padStart(2, '0');
-            const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-            const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-            return `${year}-${month}-${day}%20${hours}:${minutes}:${seconds}`;
-        }
+        
+        const formatDateTimeForAPI = (date) => {
+            // ThingSpeak expects 'YYYY-MM-DD HH:NN:SS' format in UTC.
+            const isoString = date.toISOString(); // e.g., "2023-10-27T10:30:00.000Z"
+            const formatted = isoString.replace('T', ' ').substring(0, 19);
+            return encodeURIComponent(formatted); // URL-encode the string
+        };
 
         // --- Initial Data Structure & Configuration ---
         const initialData = {
@@ -491,8 +491,41 @@
                 </div>
             );
         };
+        
+        const CustomizeModal = ({ isOpen, onClose, parameters, visibleParameters, onVisibilityChange }) => {
+            if (!isOpen) return null;
+            
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 animate-fade-in">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md animate-scale-in" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Customize Dashboard View</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Select which parameter cards to display.</p>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            {parameters.map(param => (
+                                <label key={param.name} className="flex items-center justify-between cursor-pointer">
+                                    <span className="text-gray-700 dark:text-gray-300">{param.name}</span>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={visibleParameters[param.name]} 
+                                        onChange={(e) => onVisibilityChange(param.name, e.target.checked)}
+                                        className="rounded text-blue-500 focus:ring-blue-500 h-5 w-5" 
+                                    />
+                                </label>
+                            ))}
+                        </div>
+                        <div className="p-6 pt-4 border-t border-gray-200 dark:border-gray-600 text-right">
+                            <button onClick={onClose} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 transition-colors">
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
-        const Header = ({ selectedLocation, locationsData, setSelectedLocation, isLocationDropdownOpen, setIsLocationDropdownOpen, locationDropdownRef, setDataType, dataType, setActiveTab, activeTab, handleIconClick, rotatingButton, setIsDarkMode, isDarkMode, showIndicators, setShowIndicators }) => (
+        const Header = ({ selectedLocation, locationsData, setSelectedLocation, isLocationDropdownOpen, setIsLocationDropdownOpen, locationDropdownRef, setDataType, dataType, setActiveTab, activeTab, handleIconClick, rotatingButton, setIsDarkMode, isDarkMode, showIndicators, setShowIndicators, onCustomizeClick }) => (
             <header className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3 bg-white dark:bg-gray-900 sticky top-0 z-20">
                  <div className="flex items-center gap-6">
                     <div className="group flex items-center gap-3 cursor-pointer">
@@ -534,6 +567,12 @@
                     />
                     <div className="flex items-center gap-2">
                          <div className="relative group">
+                             <button onClick={onCustomizeClick} className={`flex items-center justify-center rounded-full h-10 w-10 transition-all duration-100 active:scale-90 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600`}>
+                                <EyeIcon size={20} />
+                            </button>
+                            <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none">Customize View</span>
+                         </div>
+                         <div className="relative group">
                             <button onClick={() => { handleIconClick('indicators'); setShowIndicators(!showIndicators); }} className={`flex items-center justify-center rounded-full h-10 w-10 transition-all duration-100 active:scale-90 ${showIndicators ? 'bg-blue-100 dark:bg-blue-900 text-blue-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200'} hover:bg-gray-200 dark:hover:bg-gray-600`}>
                                 <TargetIcon size={20} />
                             </button>
@@ -555,6 +594,28 @@
                 </div>
             </header>
         );
+        
+        const AlertsFilter = ({ activeFilter, onFilterChange }) => {
+            const filters = ['All', 'pH', 'Turbidity', 'TDS'];
+            return (
+                <div className="flex items-center gap-2 mb-4 px-4">
+                    {filters.map(filter => (
+                        <button
+                            key={filter}
+                            onClick={() => onFilterChange(filter)}
+                            className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
+                                activeFilter === filter
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                        >
+                            {filter}
+                        </button>
+                    ))}
+                </div>
+            );
+        };
+
 
         // --- Main App Component ---
         function App() {
@@ -567,11 +628,22 @@
             const [selectedReport, setSelectedReport] = useState(null);
             const [isGeneratingReport, setIsGeneratingReport] = useState(false);
             const [showIndicators, setShowIndicators] = useState(true);
+            const [alertFilter, setAlertFilter] = useState('All');
+            const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
             
             // UI State
             const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
             const [rotatingButton, setRotatingButton] = useState(null);
             const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
+            
+             const [visibleParameters, setVisibleParameters] = useState(() => {
+                const initialVisibility = {};
+                initialData['Faculty of Engineering'].current.parameters.forEach(p => {
+                    initialVisibility[p.name] = true;
+                });
+                return initialVisibility;
+            });
+
 
             // Settings State
             const [settings, setSettings] = useState({ autoRefresh: true, emailNotifications: false, smsAlerts: false });
@@ -591,7 +663,7 @@
                         ? new Date(now.getTime() - 24 * 60 * 60 * 1000) 
                         : new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
                     
-                    const url = `https://api.thingspeak.com/channels/${thingSpeakConfig.channelId}/feeds.json?api_key=${thingSpeakConfig.apiKey}&start=${formatDateTime(startTime)}&end=${formatDateTime(now)}&results=8000`;
+                    const url = `https://api.thingspeak.com/channels/${thingSpeakConfig.channelId}/feeds.json?api_key=${thingSpeakConfig.apiKey}&start=${formatDateTimeForAPI(startTime)}&end=${formatDateTimeForAPI(now)}&results=8000`;
                     
                     const response = await fetch(url);
                     if (!response.ok) throw new Error('Network response was not ok');
@@ -599,8 +671,7 @@
                     const feeds = data.feeds;
 
                     if (!feeds || feeds.length === 0) {
-                        setSelectedReport({ ...baseReport, period: `(${formatDateTime(startTime)} to ${formatDateTime(now)})`, sensors: 'Faculty of Engineering', summary: [], alertSummary: ['No data available for this period.'], });
-                        setIsGeneratingReport(false);
+                        setSelectedReport({ ...baseReport, period: `(${formatDateTimeForAPI(startTime)} to ${formatDateTimeForAPI(now)})`, sensors: 'Faculty of Engineering', summary: [], alertSummary: ['No data available for this period.'], });
                         return;
                     }
 
@@ -634,8 +705,7 @@
                     });
                     
                     const uniqueAlerts = [...new Set(alertSummary)];
-
-                    setSelectedReport({ ...baseReport, period: `(${formatDateTime(startTime)} to ${formatDateTime(now)})`, sensors: 'Faculty of Engineering', summary: reportSummary, alertSummary: uniqueAlerts.length > 0 ? uniqueAlerts : ['No alerts recorded during this period.'], });
+                    setSelectedReport({ ...baseReport, period: `(${formatDateTimeForAPI(startTime)} to ${formatDateTimeForAPI(now)})`, sensors: 'Faculty of Engineering', summary: reportSummary, alertSummary: uniqueAlerts.length > 0 ? uniqueAlerts : ['No alerts recorded during this period.'], });
                 } catch (error) {
                     console.error("Failed to generate report:", error);
                      setSelectedReport({ ...baseReport, summary: [], alertSummary: ['Error generating report. Could not fetch data.'], });
@@ -712,6 +782,7 @@
                         console.error("Failed to fetch ThingSpeak data:", error);
                     }
                 };
+
                 const intervalId = setInterval(fetchCurrentData, 20000);
                 fetchCurrentData();
                 return () => clearInterval(intervalId);
@@ -724,11 +795,11 @@
 
                     const now = new Date();
                     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-                    const url = `https://api.thingspeak.com/channels/${thingSpeakConfig.channelId}/feeds.json?api_key=${thingSpeakConfig.apiKey}&start=${formatDateTime(yesterday)}&end=${formatDateTime(now)}&results=8000`;
+                    const url = `https://api.thingspeak.com/channels/${thingSpeakConfig.channelId}/feeds.json?api_key=${thingSpeakConfig.apiKey}&start=${formatDateTimeForAPI(yesterday)}&end=${formatDateTimeForAPI(now)}&results=8000`;
 
                     try {
                         const response = await fetch(url);
-                         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                         const data = await response.json();
                         const feeds = data.feeds;
 
@@ -775,7 +846,6 @@
                                 }
                             }));
                         }
-
                     } catch (error) {
                         console.error("Failed to fetch past ThingSpeak data:", error);
                     }
@@ -807,8 +877,23 @@
             const handleCloseAlert = (alertId) => {
                 setLocationsData(prevData => {
                     const updatedAlerts = prevData[selectedLocation].current.alerts.filter(alert => alert.id !== alertId);
-                    return { ...prevData, [selectedLocation]: { ...prevData[selectedLocation], current: { ...prevData[selectedLocation].current, alerts: updatedAlerts.length > 0 ? updatedAlerts : [{ id: `info-${Date.now()}`, type: 'Info', message: 'All systems normal. Water quality is within safe limits.', time: new Date().toISOString(), severity: 'low' }] } } };
+                    return {
+                        ...prevData,
+                        [selectedLocation]: {
+                            ...prevData[selectedLocation],
+                            current: {
+                                ...prevData[selectedLocation].current,
+                                alerts: updatedAlerts.length > 0 
+                                    ? updatedAlerts 
+                                    : [{ id: `info-${Date.now()}`, type: 'Info', message: 'All systems normal. Water quality is within safe limits.', time: new Date().toISOString(), severity: 'low' }]
+                            }
+                        }
+                    };
                 });
+            };
+            
+            const handleVisibilityChange = (parameterName, isVisible) => {
+                setVisibleParameters(prev => ({ ...prev, [parameterName]: isVisible }));
             };
 
             const dataForLocation = locationsData[selectedLocation];
@@ -817,10 +902,24 @@
             const parameters = activeData.parameters || [];
             const alerts = activeData.alerts || [];
             const reports = activeData.reports || [];
+            
+            const filteredAlerts = useMemo(() => {
+                if (alertFilter === 'All' || alerts.length === 0) {
+                    return alerts;
+                }
+                 // Don't filter out the default "no alerts" message
+                if (alerts.length === 1 && alerts[0].severity === 'low') {
+                    return alerts;
+                }
+                return alerts.filter(alert => 
+                    alert.message.toLowerCase().includes(alertFilter.toLowerCase())
+                );
+            }, [alerts, alertFilter]);
+
 
             return (
                 <div className="bg-gray-50 dark:bg-gray-950 min-h-screen">
-                    <Header {...{ selectedLocation, locationsData, setSelectedLocation, isLocationDropdownOpen, setIsLocationDropdownOpen, locationDropdownRef, setDataType, dataType, setActiveTab, activeTab, handleIconClick, rotatingButton, setIsDarkMode, isDarkMode, showIndicators, setShowIndicators }} />
+                    <Header {...{ selectedLocation, locationsData, setSelectedLocation, isLocationDropdownOpen, setIsLocationDropdownOpen, locationDropdownRef, setDataType, dataType, setActiveTab, activeTab, handleIconClick, rotatingButton, setIsDarkMode, isDarkMode, showIndicators, setShowIndicators, onCustomizeClick: () => setIsCustomizeModalOpen(true) }} />
                     <main className="flex-1 px-4 sm:px-6 lg:px-10 py-5">
                         <div className="w-full max-w-7xl mx-auto">
                             <h1 className="text-gray-900 dark:text-white text-3xl font-bold p-4">Water Quality Monitoring</h1>
@@ -839,7 +938,9 @@
                             <div className="py-6">
                                  {activeTab === 'Parameters' && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 px-4">
-                                        {parameters.map((param, index) => {
+                                        {parameters
+                                            .filter(param => visibleParameters[param.name])
+                                            .map((param, index) => {
                                            let paramThresholds = {};
                                             switch (param.name) {
                                                 case 'pH':
@@ -871,26 +972,29 @@
                                     </div>
                                  )}
                                  {activeTab === 'Alerts' && (
-                                     <div className="px-4 space-y-4">
-                                         {alerts.length > 0 ? alerts.map((alert, index) => (
-                                             <div key={alert.id} className="flex items-start justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 animate-fadeInUp" style={{animationDelay: `${index * 50}ms`}}>
-                                                 <div className="flex items-start gap-3">
-                                                     <div className={`w-3 h-3 rounded-full flex-shrink-0 mt-1.5 ${alert.severity === 'high' ? 'bg-red-500' : alert.severity === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'}`}></div>
-                                                     <div className="flex-1">
-                                                         <p className="text-gray-900 dark:text-gray-100 font-medium">{alert.type}</p>
-                                                         <p className="text-gray-600 dark:text-gray-300 text-sm">{alert.message}</p>
+                                     <div>
+                                        <AlertsFilter activeFilter={alertFilter} onFilterChange={setAlertFilter} />
+                                         <div className="px-4 space-y-4">
+                                             {filteredAlerts.length > 0 ? filteredAlerts.map((alert, index) => (
+                                                 <div key={alert.id} className="flex items-start justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 animate-fadeInUp" style={{animationDelay: `${index * 50}ms`}}>
+                                                     <div className="flex items-start gap-3">
+                                                         <div className={`w-3 h-3 rounded-full flex-shrink-0 mt-1.5 ${alert.severity === 'high' ? 'bg-red-500' : alert.severity === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'}`}></div>
+                                                         <div className="flex-1">
+                                                             <p className="text-gray-900 dark:text-gray-100 font-medium">{alert.type}</p>
+                                                             <p className="text-gray-600 dark:text-gray-300 text-sm">{alert.message}</p>
+                                                         </div>
+                                                     </div>
+                                                     <div className="flex items-center gap-4 pl-4">
+                                                        <p className="text-gray-500 dark:text-gray-400 text-sm whitespace-nowrap">{formatTimeAgo(alert.time)}</p>
+                                                        {isCurrent && alert.severity !== 'low' && (
+                                                            <button onClick={() => handleCloseAlert(alert.id)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                                                                <XIcon size={18} />
+                                                            </button>
+                                                        )}
                                                      </div>
                                                  </div>
-                                                 <div className="flex items-center gap-4 pl-4">
-                                                    <p className="text-gray-500 dark:text-gray-400 text-sm whitespace-nowrap">{formatTimeAgo(alert.time)}</p>
-                                                    {isCurrent && alert.severity !== 'low' && (
-                                                        <button onClick={() => handleCloseAlert(alert.id)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                                                            <XIcon size={18} />
-                                                        </button>
-                                                    )}
-                                                 </div>
-                                             </div>
-                                         )) : <p className="text-center p-10 text-gray-500 dark:text-gray-400">No active alerts.</p>}
+                                             )) : <p className="text-center p-10 text-gray-500 dark:text-gray-400">No alerts match the filter.</p>}
+                                         </div>
                                      </div>
                                  )}
                                  {activeTab === 'Reports' && (
@@ -938,6 +1042,13 @@
                         </div>
                     </main>
                     {selectedReport && <ReportModal report={selectedReport} onClose={() => setSelectedReport(null)} isGenerating={isGeneratingReport} />}
+                    <CustomizeModal 
+                        isOpen={isCustomizeModalOpen} 
+                        onClose={() => setIsCustomizeModalOpen(false)}
+                        parameters={initialData[selectedLocation].current.parameters}
+                        visibleParameters={visibleParameters}
+                        onVisibilityChange={handleVisibilityChange}
+                    />
                 </div>
             );
         }
