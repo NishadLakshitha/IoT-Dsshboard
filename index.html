@@ -34,6 +34,14 @@
         }
         @keyframes rotate-360 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-rotate { animation: rotate-360 0.5s ease-in-out; }
+        
+        @keyframes jiggle {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(-8deg); }
+          75% { transform: rotate(8deg); }
+        }
+        .animate-jiggle { animation: jiggle 0.3s ease-in-out; }
+
         @keyframes draw { to { stroke-dashoffset: 0; } }
         .animate-draw { animation: draw 1.5s ease-out forwards; }
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
@@ -351,14 +359,15 @@
             const height = 149;
             const padding = 5;
 
-            const allValues = [...data];
+            const allNumericValues = hasData ? data.map(d => d.value) : [];
+
             if (showIndicators) {
-                if (thresholds.min !== undefined) allValues.push(thresholds.min);
-                if (thresholds.max !== undefined) allValues.push(thresholds.max);
+                if (thresholds.min !== undefined) allNumericValues.push(thresholds.min);
+                if (thresholds.max !== undefined) allNumericValues.push(thresholds.max);
             }
             
-            const yMax = allValues.length > 0 ? Math.max(...allValues) * 1.15 : 10;
-            const yMin = allValues.length > 0 ? Math.min(...allValues) * 0.85 : 0;
+            const yMax = allNumericValues.length > 0 ? Math.max(...allNumericValues) * 1.15 : 10;
+            const yMin = allNumericValues.length > 0 ? Math.min(...allNumericValues) * 0.85 : 0;
             const yRange = yMax - yMin || 1;
 
             useLayoutEffect(() => {
@@ -372,9 +381,9 @@
                 return (yRatio * (height - (padding * 2))) + padding;
             };
 
-            const scalePoint = (value, index) => {
+            const scalePoint = (pointValue, index) => {
                 const x = (index / (data.length - 1)) * width;
-                const y = scaleY(value);
+                const y = scaleY(pointValue);
                 return { x, y };
             };
 
@@ -386,10 +395,10 @@
                 const xRatio = Math.max(0, Math.min(1, mouseX / rect.width));
                 const pointIndex = Math.round(xRatio * (data.length - 1));
                 
-                const pointValue = data[pointIndex];
-                if (pointValue !== undefined) {
-                    const { x, y } = scalePoint(pointValue, pointIndex);
-                    setHoveredPoint({ value: pointValue.toFixed(2), x, y });
+                const point = data[pointIndex];
+                if (point !== undefined) {
+                    const { x, y } = scalePoint(point.value, pointIndex);
+                    setHoveredPoint({ value: point.value.toFixed(2), time: point.time, x, y });
                 }
             };
 
@@ -422,73 +431,87 @@
 
             if (!hasData) {
                 return (
-                    <div className="relative w-full h-[148px]">
-                        <svg width="100%" height="100%" viewBox="-3 0 478 150" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                             <path d="M -3,75 L 475,75" stroke={isDarkMode ? "#4b5563" : "#d1d5db"} strokeWidth="3" strokeDasharray="5,5" strokeLinecap="round" />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <p className="text-gray-400 dark:text-gray-500 text-sm">Loading graph data...</p>
+                     <div className="flex flex-col flex-1 gap-2 pt-4 min-h-[180px]">
+                        <div className="relative w-full h-[148px]">
+                            <svg width="100%" height="100%" viewBox="-3 0 478 150" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                                 <path d="M -3,75 L 475,75" stroke={isDarkMode ? "#4b5563" : "#d1d5db"} strokeWidth="3" strokeDasharray="5,5" strokeLinecap="round" />
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <p className="text-gray-400 dark:text-gray-500 text-sm">Loading graph data...</p>
+                            </div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 font-bold">
+                            <span>...</span><span>...</span>
                         </div>
                     </div>
                 );
             }
 
             const linePath = data.map((point, index) => {
-                const { x, y } = scalePoint(point, index);
+                const { x, y } = scalePoint(point.value, index);
                 return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)},${y.toFixed(2)}`;
             }).join(' ');
 
-            const { x: firstX } = scalePoint(data[0], 0);
+            const { x: firstX } = scalePoint(data[0].value, 0);
             const fillPath = `${linePath} V ${height} L ${firstX.toFixed(2)},${height} Z`;
             const gradientId = `chart_gradient_${isDarkMode}`;
             
             let tooltipTransform = '';
+            let tooltipTime = '';
             if (hoveredPoint) {
-                const tooltipX = hoveredPoint.x > width / 2 ? hoveredPoint.x - 75 : hoveredPoint.x + 15;
-                const tooltipY = hoveredPoint.y < 40 ? hoveredPoint.y + 15 : hoveredPoint.y - 38;
+                const tooltipX = hoveredPoint.x > width / 2 ? hoveredPoint.x - 105 : hoveredPoint.x + 15;
+                const tooltipY = hoveredPoint.y < 50 ? hoveredPoint.y + 15 : hoveredPoint.y - 48;
                 tooltipTransform = `translate(${tooltipX}, ${tooltipY})`;
+                tooltipTime = new Date(hoveredPoint.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             }
 
             return (
-                 <div 
-                    className="relative"
-                    ref={containerRef}
-                    onMouseMove={handleMouseMove}
-                    onMouseLeave={handleMouseLeave}
-                >
-                    {unit && <div className="absolute top-1 right-2 text-xs font-bold text-gray-400 dark:text-gray-500 bg-white/50 dark:bg-gray-800/50 px-1 rounded">Unit: {unit}</div>}
-                    <svg width="100%" height="148" viewBox="-3 0 478 150" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                        <defs>
-                            <linearGradient id={gradientId} x1={width / 2} y1="0" x2={width / 2} y2={height} gradientUnits="userSpaceOnUse">
-                                <stop stopColor={isDarkMode ? "#374151" : "#e9ecef"} />
-                                <stop offset="1" stopColor={isDarkMode ? "#374151" : "#f8f9fa"} stopOpacity="0" />
-                            </linearGradient>
-                        </defs>
-                        {renderThresholds()}
-                        <path className="animate-fade-in" d={fillPath} fill={`url(#${gradientId})`} style={{animationDelay: '0.5s', animationFillMode: 'backwards'}} />
-                        <path
-                            ref={pathRef}
-                            className="animate-draw"
-                            d={linePath}
-                            stroke={isDarkMode ? "#9ca3af" : "#4b5563"}
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            fill="none"
-                            strokeDasharray={pathLength}
-                            strokeDashoffset={pathLength}
-                        />
-                        {hoveredPoint && (
-                            <g>
-                                <line x1={hoveredPoint.x} y1="0" x2={hoveredPoint.x} y2={height} stroke={isDarkMode ? "#4b5563" : "#d1d5db"} strokeWidth="1" strokeDasharray="3,3" />
-                                <circle cx={hoveredPoint.x} cy={hoveredPoint.y} r="5" fill={isDarkMode ? "#60a5fa" : "#2563eb"} stroke={isDarkMode ? '#111827' : '#f9fafb'} strokeWidth="2" />
-                                 <g transform={tooltipTransform}>
-                                    <rect width="60" height="24" rx="4" fill={isDarkMode ? "rgba(17, 24, 39, 0.85)" : "rgba(255, 255, 255, 0.9)"} stroke={isDarkMode ? "#4b5563" : "#d1d5db"} />
-                                    <text x="30" y="16" fill={isDarkMode ? '#e5e7eb' : '#1f2937'} fontSize="12" fontWeight="bold" textAnchor="middle">{hoveredPoint.value}</text>
+                 <div className="flex flex-col flex-1 gap-2 pt-4 min-h-[180px]">
+                     <div 
+                        className="relative"
+                        ref={containerRef}
+                        onMouseMove={handleMouseMove}
+                        onMouseLeave={handleMouseLeave}
+                    >
+                        {unit && <div className="absolute top-1 right-2 text-xs font-bold text-gray-400 dark:text-gray-500 bg-white/50 dark:bg-gray-800/50 px-1 rounded">Unit: {unit}</div>}
+                        <svg width="100%" height="148" viewBox="-3 0 478 150" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id={gradientId} x1={width / 2} y1="0" x2={width / 2} y2={height} gradientUnits="userSpaceOnUse">
+                                    <stop stopColor={isDarkMode ? "#374151" : "#e9ecef"} />
+                                    <stop offset="1" stopColor={isDarkMode ? "#374151" : "#f8f9fa"} stopOpacity="0" />
+                                </linearGradient>
+                            </defs>
+                            {renderThresholds()}
+                            <path className="animate-fade-in" d={fillPath} fill={`url(#${gradientId})`} style={{animationDelay: '0.5s', animationFillMode: 'backwards'}} />
+                            <path
+                                ref={pathRef}
+                                className="animate-draw"
+                                d={linePath}
+                                stroke={isDarkMode ? "#9ca3af" : "#4b5563"}
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                fill="none"
+                                strokeDasharray={pathLength}
+                                strokeDashoffset={pathLength}
+                            />
+                            {hoveredPoint && (
+                                <g>
+                                    <line x1={hoveredPoint.x} y1="0" x2={hoveredPoint.x} y2={height} stroke={isDarkMode ? "#4b5563" : "#d1d5db"} strokeWidth="1" strokeDasharray="3,3" />
+                                    <circle cx={hoveredPoint.x} cy={hoveredPoint.y} r="5" fill={isDarkMode ? "#60a5fa" : "#2563eb"} stroke={isDarkMode ? '#111827' : '#f9fafb'} strokeWidth="2" />
+                                     <g transform={tooltipTransform}>
+                                        <rect width="90" height="34" rx="4" fill={isDarkMode ? "rgba(17, 24, 39, 0.85)" : "rgba(255, 255, 255, 0.9)"} stroke={isDarkMode ? "#4b5563" : "#d1d5db"} />
+                                        <text x="45" y="14" fill={isDarkMode ? '#e5e7eb' : '#1f2937'} fontSize="12" fontWeight="bold" textAnchor="middle">{hoveredPoint.value}</text>
+                                        <text x="45" y="28" fill={isDarkMode ? '#9ca3af' : '#4b5563'} fontSize="10" textAnchor="middle">{tooltipTime}</text>
+                                    </g>
                                 </g>
-                            </g>
-                        )}
-                    </svg>
-                </div>
+                            )}
+                        </svg>
+                    </div>
+                     <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 font-bold">
+                        <span>{hasData ? new Date(data[0].time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}</span>
+                        <span>{hasData ? new Date(data[data.length - 1].time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}</span>
+                    </div>
+                 </div>
             );
         };
         
@@ -508,7 +531,7 @@
                                     <span className="text-gray-700 dark:text-gray-300">{param.name}</span>
                                     <input 
                                         type="checkbox" 
-                                        checked={visibleParameters[param.name]} 
+                                        checked={!!visibleParameters[param.name]} 
                                         onChange={(e) => onVisibilityChange(param.name, e.target.checked)}
                                         className="rounded text-blue-500 focus:ring-blue-500 h-5 w-5" 
                                     />
@@ -567,7 +590,7 @@
                     />
                     <div className="flex items-center gap-2">
                          <div className="relative group">
-                             <button onClick={onCustomizeClick} className={`flex items-center justify-center rounded-full h-10 w-10 transition-all duration-100 active:scale-90 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600`}>
+                             <button onClick={onCustomizeClick} className={`flex items-center justify-center rounded-full h-10 w-10 transition-all duration-100 active:scale-90 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 ${rotatingButton === 'customize' ? 'animate-jiggle' : ''}`}>
                                 <EyeIcon size={20} />
                             </button>
                             <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none">Customize View</span>
@@ -732,11 +755,11 @@
                                 const fieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(key => thingSpeakConfig.fieldMapping[key] === param.name);
                                 if (!fieldKey) return param;
 
-                                const history = feeds.map(feed => parseFloat(feed[fieldKey])).filter(value => !isNaN(value) && value !== null);
+                                const history = feeds.map(feed => ({ value: parseFloat(feed[fieldKey]), time: feed.created_at })).filter(point => !isNaN(point.value) && point.value !== null);
 
                                 if (history.length > 0) {
-                                    const newValue = history[history.length - 1];
-                                    const prevValue = history.length > 1 ? history[history.length - 2] : newValue;
+                                    const newValue = history[history.length - 1].value;
+                                    const prevValue = history.length > 1 ? history[history.length - 2].value : newValue;
                                     const change = prevValue !== 0 ? (((newValue - prevValue) / Math.abs(prevValue)) * 100) : 0;
                                     return { ...param, value: newValue.toFixed(2), history, change: `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`, isPositive: change >= 0 };
                                 }
@@ -807,8 +830,8 @@
                              const pastParameters = initialData[selectedLocation].past['Last 24 Hours'].parameters.map(param => {
                                 const fieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(key => thingSpeakConfig.fieldMapping[key] === param.name);
                                 if (!fieldKey) return param;
-                                const history = feeds.map(feed => parseFloat(feed[fieldKey])).filter(v => !isNaN(v));
-                                const latestValue = history.length > 0 ? history[history.length - 1] : '...';
+                                const history = feeds.map(feed => ({ value: parseFloat(feed[fieldKey]), time: feed.created_at })).filter(point => !isNaN(point.value) && point.value !== null);
+                                const latestValue = history.length > 0 ? history[history.length - 1].value : '...';
                                 return { ...param, value: latestValue.toFixed ? latestValue.toFixed(2) : latestValue, history, change: '' };
                             });
 
@@ -919,7 +942,7 @@
 
             return (
                 <div className="bg-gray-50 dark:bg-gray-950 min-h-screen">
-                    <Header {...{ selectedLocation, locationsData, setSelectedLocation, isLocationDropdownOpen, setIsLocationDropdownOpen, locationDropdownRef, setDataType, dataType, setActiveTab, activeTab, handleIconClick, rotatingButton, setIsDarkMode, isDarkMode, showIndicators, setShowIndicators, onCustomizeClick: () => setIsCustomizeModalOpen(true) }} />
+                    <Header {...{ selectedLocation, locationsData, setSelectedLocation, isLocationDropdownOpen, setIsLocationDropdownOpen, locationDropdownRef, setDataType, dataType, setActiveTab, activeTab, handleIconClick, rotatingButton, setIsDarkMode, isDarkMode, showIndicators, setShowIndicators, onCustomizeClick: () => { handleIconClick('customize'); setIsCustomizeModalOpen(true); } }} />
                     <main className="flex-1 px-4 sm:px-6 lg:px-10 py-5">
                         <div className="w-full max-w-7xl mx-auto">
                             <h1 className="text-gray-900 dark:text-white text-3xl font-bold p-4">Water Quality Monitoring</h1>
@@ -961,12 +984,7 @@
                                                     <p className="text-gray-500 dark:text-gray-400">vs previous reading</p>
                                                     <p className={`font-medium ${param.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{param.change}</p>
                                                 </div>}
-                                                <div className="flex flex-col flex-1 gap-2 pt-4 min-h-[180px]">
-                                                    <ChartSVG data={param.history} isDarkMode={isDarkMode} unit={param.unit} thresholds={paramThresholds} showIndicators={showIndicators} />
-                                                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 font-bold">
-                                                        <span>Earlier</span><span>Later</span>
-                                                    </div>
-                                                </div>
+                                                <ChartSVG data={param.history} isDarkMode={isDarkMode} unit={param.unit} thresholds={paramThresholds} showIndicators={showIndicators} />
                                             </div>
                                         )})}
                                     </div>
