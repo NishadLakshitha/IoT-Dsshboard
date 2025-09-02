@@ -1,37 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AquaTrack - Water Quality Dashboard</title>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
-
+    
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Configure Tailwind CSS for class-based dark mode -->
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Configuration for Tailwind dark mode -->
     <script>
-      tailwind.config = {
-        darkMode: 'class',
-      }
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        };
     </script>
-
-    <!-- React Libraries -->
-    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
-
-    <!-- Babel for JSX compilation -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
+    
+    <!-- Custom styles and animations -->
     <style>
-        /* Custom CSS for animations and base font */
+        /* Base font for the application */
         body {
             font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
+
+        /* Keyframe animations for visual effects */
         @keyframes rotate-360 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-rotate { animation: rotate-360 0.5s ease-in-out; }
 
@@ -44,12 +49,14 @@
 
         @keyframes draw { to { stroke-dashoffset: 0; } }
         .animate-draw { animation: draw 1.5s ease-out forwards; }
+        
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
+        
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fadeInUp { animation: fadeInUp 0.5s ease-out forwards; }
 
-        /* Smoother modal pop-up and close animations */
+        /* Modal animations for smooth transitions */
         @keyframes scaleIn {
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
@@ -57,7 +64,7 @@
         .animate-scale-in { animation: scaleIn 0.2s ease-out forwards; }
 
         @keyframes scaleOut {
-            from { opacity: 1; transform: scale(1); }
+            from { opacity: 1; }
             to { opacity: 0; transform: scale(0.95); }
         }
         .animate-scale-out { animation: scaleOut 0.2s ease-in forwards; }
@@ -68,79 +75,133 @@
         }
         .animate-fade-out { animation: fadeOut 0.2s ease-in forwards; }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        /* Spinner for loading states */
         .spinner {
             border: 4px solid rgba(0, 0, 0, 0.1);
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            border-left-color: #09f;
+            border-left-color: #09f; /* A nice blue color */
             animation: spin 1s ease infinite;
         }
-
+        .dark .spinner {
+            border-left-color: #38bdf8; /* Lighter blue for dark mode */
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-950">
-    <!-- The React app will be rendered inside this div -->
+    
+    <!-- The root element where the React app will be mounted -->
     <div id="root"></div>
 
-    <!-- The entire React application is placed within this script tag -->
+    <!-- React and ReactDOM scripts -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX transpilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- The React application code -->
     <script type="text/babel">
         const { useState, useEffect, useRef, useLayoutEffect, useMemo } = React;
-        // --- Icon Components (Inlined SVGs for portability) ---
+
+        // --- SVG Icon Components ---
+        // Inlining SVGs makes the component portable and reduces HTTP requests.
         const SettingsIcon = ({ size = 24, className = '' }) => (
-          <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2.82l-.15-.1a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l-.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1 0-2.82l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-            <circle cx="12" cy="12" r="3"></circle>
-          </svg>
+            <svg xmlns="http://www.w.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.42a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.42a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.42a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0 .33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.42a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
         );
         const MoonIcon = ({ size = 24, className = '' }) => (
-          <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-          </svg>
+            <svg xmlns="http://www.w.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+            </svg>
         );
         const SunIcon = ({ size = 24, className = '' }) => (
-          <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-            <circle cx="12" cy="12" r="4"></circle>
-            <path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path>
-            <path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path>
-            <path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
-          </svg>
+            <svg xmlns="http://www.w.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path>
+                <path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path>
+                <path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
+            </svg>
         );
         const ChevronDownIcon = ({ size = 24, className = '' }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"></path></svg>
+            <svg xmlns="http://www.w.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"></path></svg>
         );
         const MapPinIcon = ({ size = 24, className = '' }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            <svg xmlns="http://www.w.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
         );
         const XIcon = ({ size = 24, className = '' }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <svg xmlns="http://www.w.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         );
         const TargetIcon = ({ size = 24, className = '' }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+            <svg xmlns="http://www.w.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
         );
         const EyeIcon = ({ size = 24, className = '' }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <svg xmlns="http://www.w.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        );
+        const DownloadIcon = ({ size = 24, className = '' }) => (
+            <svg xmlns="http://www.w.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         );
         const AquaTrackLogo = ({ className = '' }) => (
             <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
                 <path fillRule="evenodd" clipRule="evenodd" d="M39.475 21.6262C40.358 21.4363 40.6863 21.5589 40.7581 21.5934C40.7876 21.655 40.8547 21.857 40.8082 22.3336C40.7408 23.0255 40.4502 24.0046 39.8572 25.2301C38.6799 27.6631 36.5085 30.6631 33.5858 33.5858C30.6631 36.5085 27.6632 38.6799 25.2301 39.8572C24.0046 40.4502 23.0255 40.7407 22.3336 40.8082C21.8571 40.8547 21.6551 40.7875 21.5934 40.7581C21.5589 40.6863 21.4363 40.358 21.6262 39.475C21.8562 38.4054 22.4689 36.9657 23.5038 35.2817C24.7575 33.2417 26.5497 30.9744 28.7621 28.762C30.9744 26.5497 33.2417 24.7574 35.2817 23.5037C36.9657 22.4689 38.4054 21.8562 39.475 21.6262ZM4.41189 29.2403L18.7597 43.5881C19.8813 44.7097 21.4027 44.9179 22.7217 44.7893C24.0585 44.659 25.5148 44.1631 26.9723 43.4579C29.9052 42.0387 33.2618 39.5667 36.4142 36.4142C39.5667 33.2618 42.0387 29.9052 43.4579 26.9723C44.1631 25.5148 44.659 24.0585 44.7893 22.7217C44.9179 21.4027 44.7097 19.8813 43.5881 18.7597L29.2403 4.41187C27.8527 3.02428 25.8765 3.02573 24.2861 3.36776C22.6081 3.72863 20.7334 4.58419 18.8396 5.74801C16.4978 7.18716 13.9881 9.18353 11.5858 11.5858C9.18354 13.988 7.18717 16.4978 5.74802 18.8396C4.58421 20.7334 3.72865 22.6081 3.36778 24.2861C3.02574 25.8765 3.02429 27.8527 4.41189 29.2403Z" fill="currentColor" />
             </svg>
         );
+
         // --- Utility Functions ---
+        // Formats a Date object into 'YYYY-MM-DD' string.
         const formatDate = (date) => {
             return date.toISOString().split('T')[0];
         }
 
+        // Formats a Date object for the ThingSpeak API, which requires URL encoding.
         const formatDateTimeForAPI = (date) => {
-            // ThingSpeak expects 'YYYY-MM-DD HH:NN:SS' format in UTC.
-            const isoString = date.toISOString(); // e.g., "2023-10-27T10:30:00.000Z"
+            const isoString = date.toISOString();
             const formatted = isoString.replace('T', ' ').substring(0, 19);
-            return encodeURIComponent(formatted); // URL-encode the string
+            return encodeURIComponent(formatted);
         };
+
+        // Formats a date for user-friendly display in reports.
+        const formatFriendlyDateTime = (date) => {
+            return new Intl.DateTimeFormat('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            }).format(date);
+        };
+
+        // Downsamples a large dataset to a more manageable size for charting.
+        const downsampleData = (data, targetPoints) => {
+            if (!data || data.length <= targetPoints) {
+                return data;
+            }
+
+            const downsampled = [];
+            const bucketSize = Math.ceil(data.length / targetPoints);
+
+            for (let i = 0; i < data.length; i += bucketSize) {
+                const bucket = data.slice(i, i + bucketSize);
+                if (bucket.length > 0) {
+                    const avgValue = bucket.reduce((sum, point) => sum + point.value, 0) / bucket.length;
+                    const middlePoint = bucket[Math.floor(bucket.length / 2)];
+                    downsampled.push({
+                        value: avgValue,
+                        time: middlePoint.time,
+                    });
+                }
+            }
+            return downsampled;
+        };
+
         // --- Initial Data Structure & Configuration ---
+        // This object defines the initial state of the application's data.
         const initialData = {
             'Faculty of Engineering': {
                 current: {
@@ -153,30 +214,34 @@
                     ],
                     alerts: [],
                     reports: [{
-                        name: 'Weekly Engineering Report',
-                        date: formatDate(new Date()),
-                        status: 'Generated',
+                        name: 'Past 24 Hours Report',
+                        date: formatDate(new Date(new Date().setDate(new Date().getDate() - 1))),
+                        status: 'Ready to Generate',
+                        detailedAlerts: [],
+                        recommendations: ''
                     }],
                 },
                 past: {
-                    'Last 24 Hours': {
-                        parameters: [
-                            { name: 'pH', value: '...', change: '...', isPositive: true, unit: '', history: [] },
-                            { name: 'Turbidity', value: '...', change: '...', isPositive: false, unit: 'NTU', history: [] },
-                            { name: 'TDS', value: '...', change: '...', isPositive: true, unit: 'ppm', history: [] },
-                            { name: 'Temperature', value: '...', change: '...', isPositive: true, unit: '°C', history: [] },
-                            { name: 'WQI', value: '...', change: '...', isPositive: true, unit: '', history: [] }
-                        ],
-                        alerts: [],
-                        reports: [{
-                            name: 'Past 24 Hours Report',
-                            date: formatDate(new Date(new Date().setDate(new Date().getDate() - 1))),
-                            status: 'Ready to Generate'
-                        }]
-                    }
+                    parameters: [
+                        { name: 'pH', value: '...', change: '...', isPositive: true, unit: '', history: [] },
+                        { name: 'Turbidity', value: '...', change: '...', isPositive: false, unit: 'NTU', history: [] },
+                        { name: 'TDS', value: '...', change: '...', isPositive: true, unit: 'ppm', history: [] },
+                        { name: 'Temperature', value: '...', change: '...', isPositive: true, unit: '°C', history: [] },
+                        { name: 'WQI', value: '...', change: '...', isPositive: true, unit: '', history: [] }
+                    ],
+                    alerts: [],
+                    reports: [{
+                        name: 'Weekly Engineering Report',
+                        date: formatDate(new Date()),
+                        status: 'Generated',
+                        detailedAlerts: [],
+                        recommendations: ''
+                    }]
                 }
             },
         };
+
+        // Configuration for the ThingSpeak API
         const thingSpeakConfig = {
             channelId: '2971437',
             apiKey: 'NUACMFTOOWWV7X5Y',
@@ -188,7 +253,9 @@
                 'field5': 'WQI',
             }
         };
+
         // --- Utility Functions ---
+        // Converts an ISO date string to a human-readable "time ago" format.
         const formatTimeAgo = (isoString) => {
             if (!isoString) return 'a while ago';
             const date = new Date(isoString);
@@ -197,12 +264,15 @@
             const minutes = Math.round(seconds / 60);
             const hours = Math.round(minutes / 60);
             const days = Math.round(hours / 24);
+
             if (seconds < 60) return "Just now";
             if (minutes < 60) return `${minutes}m ago`;
             if (hours < 24) return `${hours}h ago`;
             return `${days}d ago`;
         };
+
         // --- Custom Hooks ---
+        // Hook to detect clicks outside a specified element.
         const useClickOutside = (ref, handler) => {
             useEffect(() => {
                 const listener = (event) => {
@@ -219,6 +289,7 @@
         };
 
         // --- Child Components ---
+        // A stylish toggle switch component.
         const ToggleSwitch = ({ isToggled, onToggle, labelLeft, labelRight }) => {
             return (
                 <div className="relative flex w-max items-center rounded-full bg-gray-200 p-1 dark:bg-gray-700">
@@ -245,11 +316,14 @@
             );
         };
 
-        const ReportModal = ({ report, onClose, isGenerating }) => {
+        // Modal for displaying generated reports.
+        const ReportModal = ({ report, onClose, isGenerating, isDarkMode, selectedLocation, showIndicators, thresholds }) => {
             const [isClosing, setIsClosing] = useState(false);
+
             useEffect(() => {
-              setIsClosing(false);
+                setIsClosing(false);
             }, [report]);
+
             if (!report) return null;
 
             const handleClose = () => {
@@ -270,66 +344,96 @@
                 }
 
                 return (
-                    <div className="space-y-6 text-gray-800 dark:text-gray-200">
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Report Overview</h2>
-                        <div>
-                            <p><span className="font-semibold">Monitoring Period:</span> {report.period}</p>
-                            <p><span className="font-semibold">Sensors Used:</span> {report.sensors}</p>
-                        </div>
+                    <>
+                        <div className="space-y-6 text-gray-800 dark:text-gray-200">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Report Overview</h2>
+                                <div>
+                                    <p><span className="font-semibold">Monitoring Period:</span> {report.period}</p>
+                                    <p><span className="font-semibold">Sensor Location:</span> {report.sensors}</p>
+                                </div>
+                            </div>
 
-                        <div>
-                            <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">Data Summary</h3>
-                            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead className="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Parameter</th>
-                                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Average</th>
-                                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Minimum</th>
-                                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Maximum</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                        {report.summary.map(item => (
-                                            <tr key={item.param}>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{item.param}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm">{item.avg}{item.unit}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm">{item.min}{item.unit}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm">{item.max}{item.unit}</td>
+                            <div>
+                                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">Data Summary</h3>
+                                <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                        <thead className="bg-gray-50 dark:bg-gray-700">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Parameter</th>
+                                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Average</th>
+                                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Minimum</th>
+                                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Maximum</th>
                                             </tr>
+                                        </thead>
+                                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                            {report.summary.map(item => (
+                                                <tr key={item.param}>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{item.param}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">{item.avg}{item.unit}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">{item.min}{item.unit}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">{item.max}{item.unit}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Trend Analysis</h3>
+                                <div className="space-y-4">
+                                    {report.history && Object.keys(report.history).map(paramName => {
+                                        const paramData = report.history[paramName];
+                                        const unit = initialData[selectedLocation].current.parameters.find(p => p.name === paramName)?.unit || '';
+                                        let paramThresholds = {};
+                                        switch (paramName) {
+                                            case 'pH':
+                                                paramThresholds = { min: thresholds.phMin, max: thresholds.phMax };
+                                                break;
+                                            case 'Turbidity':
+                                                paramThresholds = { max: thresholds.turbidityMax };
+                                                break;
+                                            case 'TDS':
+                                                paramThresholds = { max: thresholds.tdsMax };
+                                                break;
+                                        }
+                                        return (
+                                            <div key={paramName} className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                                                <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">{paramName}</h4>
+                                                <ChartSVG data={paramData} isDarkMode={isDarkMode} unit={unit} thresholds={paramThresholds} showIndicators={showIndicators} />
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">Alert Summary</h3>
+                                {report.alertSummary && report.alertSummary.length > 0 ? (
+                                    <ul className="list-disc list-inside space-y-2">
+                                        {report.alertSummary.map((summaryLine, index) => (
+                                            <li key={index} className="text-sm text-gray-600 dark:text-gray-300">
+                                                {summaryLine}
+                                            </li>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </ul>
+                                ) : (
+                                    <p className="text-sm text-gray-600 dark:text-gray-300">No alerts recorded during this period.</p>
+                                )}
                             </div>
                         </div>
-                         <div>
-                            <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Trend Analysis</h3>
-                            <div className="text-center py-8 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                                <p className="text-gray-500 dark:text-gray-400">[Trend Graph Placeholder]</p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Alert Summary</h3>
-                            {report.alertSummary.length > 0 ? (
-                                <ul className="list-disc list-inside space-y-1 text-sm">
-                                    {report.alertSummary.map((alert, index) => <li key={index}>{alert}</li>)}
-                                </ul>
-                            ) : (
-                                <p className="text-sm text-gray-500 dark:text-gray-400">No alerts recorded during this period.</p>
-                            )}
-                        </div>
-                    </div>
+                    </>
                 );
             };
 
             return (
                 <div className={`fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick={handleClose}>
                     <div className={`bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col ${isClosing ? 'animate-scale-out' : 'animate-scale-in'}`} onClick={(e) => e.stopPropagation()}>
-                        <div className="p-8 pb-4 overflow-y-auto">
-                            {renderContent()}
+                        <div className="overflow-y-auto">
+                            <div className="p-8">
+                                {renderContent()}
+                            </div>
                         </div>
-                        <div className="p-6 pt-4 border-t border-gray-200 dark:border-gray-600 text-right flex-shrink-0">
+                        <div className="p-6 pt-4 border-t border-gray-200 dark:border-gray-600 text-right flex-shrink-0 flex justify-end gap-3">
                             <button onClick={handleClose} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 transition-colors">
                                 Close
                             </button>
@@ -339,16 +443,20 @@
             );
         };
 
+        // Custom SVG Chart component for visualizing historical data.
         const ChartSVG = ({ data = [], isDarkMode, unit, thresholds = {}, showIndicators }) => {
             const pathRef = useRef(null);
             const containerRef = useRef(null);
             const [pathLength, setPathLength] = useState(0);
             const [hoveredPoint, setHoveredPoint] = useState(null);
+
             const hasData = data && data.length >= 2;
             const width = 472;
             const height = 149;
             const padding = 5;
+
             const allNumericValues = hasData ? data.map(d => d.value) : [];
+
             if (showIndicators) {
                 if (thresholds.min !== undefined) allNumericValues.push(thresholds.min);
                 if (thresholds.max !== undefined) allNumericValues.push(thresholds.max);
@@ -363,15 +471,18 @@
                     setPathLength(pathRef.current.getTotalLength());
                 }
             }, [data, hasData]);
+
             const scaleY = (value) => {
                 const yRatio = (yMax - value) / yRange;
                 return (yRatio * (height - (padding * 2))) + padding;
             };
+
             const scalePoint = (pointValue, index) => {
                 const x = (index / (data.length - 1)) * width;
                 const y = scaleY(pointValue);
                 return { x, y };
             };
+
             const handleMouseMove = (event) => {
                 if (!hasData || !containerRef.current) return;
                 const rect = containerRef.current.getBoundingClientRect();
@@ -386,31 +497,40 @@
                     setHoveredPoint({ value: point.value.toFixed(2), time: point.time, x, y });
                 }
             };
+
             const handleMouseLeave = () => setHoveredPoint(null);
 
             const renderThresholds = () => {
                 if (!showIndicators) return null;
-                if (thresholds.max !== undefined && thresholds.min === undefined) {
-                    const warnLevel = thresholds.max * 0.8;
+
+                if (thresholds.max !== undefined && thresholds.min === undefined) { // For parameters like Turbidity/TDS
+                    const warnLevel = thresholds.max * 0.8; 
                     return (
-                        <>
+                        <React.Fragment>
+                            {/* Critical (above max) */}
                             <rect x="0" y={scaleY(yMax)} width={width} height={scaleY(thresholds.max) - scaleY(yMax)} fill="rgba(239, 68, 68, 0.2)" />
+                            {/* Warning (between warnLevel and max) */}
                             <rect x="0" y={scaleY(thresholds.max)} width={width} height={scaleY(warnLevel) - scaleY(thresholds.max)} fill="rgba(245, 158, 11, 0.2)" />
+                            {/* Safe (below warnLevel) */}
                             <rect x="0" y={scaleY(warnLevel)} width={width} height={height - scaleY(warnLevel)} fill="rgba(34, 197, 94, 0.15)" />
-                        </>
+                        </React.Fragment>
                     );
                 }
-                if (thresholds.max !== undefined && thresholds.min !== undefined) {
+                if (thresholds.max !== undefined && thresholds.min !== undefined) { // For parameters like pH
                     return (
-                        <>
+                        <React.Fragment>
+                            {/* Critical (above max) */}
                             <rect x="0" y={scaleY(yMax)} width={width} height={scaleY(thresholds.max) - scaleY(yMax)} fill="rgba(239, 68, 68, 0.2)" />
+                            {/* Safe (between min and max) */}
                             <rect x="0" y={scaleY(thresholds.max)} width={width} height={scaleY(thresholds.min) - scaleY(thresholds.max)} fill="rgba(34, 197, 94, 0.15)" />
+                            {/* Critical (below min) */}
                             <rect x="0" y={scaleY(thresholds.min)} width={width} height={height - scaleY(thresholds.min)} fill="rgba(239, 68, 68, 0.2)" />
-                        </>
+                        </React.Fragment>
                     );
                 }
                 return null;
             };
+
             if (!hasData) {
                 return (
                      <div className="flex flex-col flex-1 gap-2 pt-4 min-h-[180px]">
@@ -423,7 +543,8 @@
                             </div>
                         </div>
                         <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 font-bold">
-                            <span>...</span><span>...</span>
+                            <span>{hasData ? new Date(data[0].time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}</span>
+                            <span>{hasData ? new Date(data[data.length - 1].time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}</span>
                         </div>
                     </div>
                 );
@@ -433,6 +554,7 @@
                 const { x, y } = scalePoint(point.value, index);
                 return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)},${y.toFixed(2)}`;
             }).join(' ');
+
             const { x: firstX } = scalePoint(data[0].value, 0);
             const fillPath = `${linePath} V ${height} L ${firstX.toFixed(2)},${height} Z`;
             const gradientId = `chart_gradient_${isDarkMode}`;
@@ -469,7 +591,7 @@
                                 className="animate-draw"
                                 d={linePath}
                                 stroke={isDarkMode ? "#9ca3af" : "#4b5563"}
-                                strokeWidth="3"
+                                strokeWidth="2"
                                 strokeLinecap="round"
                                 fill="none"
                                 strokeDasharray={pathLength}
@@ -496,8 +618,10 @@
             );
         };
 
+        // Modal for customizing which dashboard cards are visible.
         const CustomizeModal = ({ isOpen, onClose, parameters, visibleParameters, onVisibilityChange }) => {
             if (!isOpen) return null;
+
             return (
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 animate-fade-in">
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md animate-scale-in" onClick={(e) => e.stopPropagation()}>
@@ -528,7 +652,104 @@
             );
         };
 
-        const Header = ({ selectedLocation, locationsData, setSelectedLocation, isLocationDropdownOpen, setIsLocationDropdownOpen, locationDropdownRef, setDataType, dataType, setActiveTab, activeTab, handleIconClick, rotatingButton, setIsDarkMode, isDarkMode, showIndicators, setShowIndicators, onCustomizeClick }) => (
+        // SettingsTab component
+        const SettingsTab = ({ settings, onSettingChange, onSaveSettings }) => {
+            return (
+                <div className="px-4 py-6 space-y-8">
+                    {/* Monitoring Settings Section */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Monitoring Settings</h3>
+                        <div className="space-y-4">
+                            <label className="flex items-center justify-between cursor-pointer">
+                                <span className="text-gray-700 dark:text-gray-300">Auto-refresh data</span>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.autoRefresh}
+                                    onChange={(e) => onSettingChange('autoRefresh', e.target.checked)}
+                                    className="rounded text-blue-500 focus:ring-blue-500 h-5 w-5"
+                                />
+                            </label>
+                            <label className="flex items-center justify-between cursor-pointer">
+                                <span className="text-gray-700 dark:text-gray-300">Email notifications</span>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.emailNotifications}
+                                    onChange={(e) => onSettingChange('emailNotifications', e.target.checked)}
+                                    className="rounded text-blue-500 focus:ring-blue-500 h-5 w-5"
+                                />
+                            </label>
+                            <label className="flex items-center justify-between cursor-pointer">
+                                <span className="text-gray-700 dark:text-gray-300">SMS alerts</span>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.smsAlerts}
+                                    onChange={(e) => onSettingChange('smsAlerts', e.target.checked)}
+                                    className="rounded text-blue-500 focus:ring-blue-500 h-5 w-5"
+                                />
+                            </label>
+                        </div>
+                    </div>
+
+                    {/* Threshold Values Section */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Threshold Values</h3>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <label htmlFor="phMinMax" className="text-gray-700 dark:text-gray-300">pH Min/Max</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={settings.phMin}
+                                        onChange={(e) => onSettingChange('phMin', parseFloat(e.target.value))}
+                                        className="w-24 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={settings.phMax}
+                                        onChange={(e) => onSettingChange('phMax', parseFloat(e.target.value))}
+                                        className="w-24 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <label htmlFor="turbidityMax" className="text-gray-700 dark:text-gray-300">Turbidity Max (NTU)</label>
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    value={settings.turbidityMax}
+                                    onChange={(e) => onSettingChange('turbidityMax', parseFloat(e.target.value))}
+                                    className="w-24 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <label htmlFor="tdsMax" className="text-gray-700 dark:text-gray-300">TDS Max (ppm)</label>
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    value={settings.tdsMax}
+                                    onChange={(e) => onSettingChange('tdsMax', parseFloat(e.target.value))}
+                                    className="w-24 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-center">
+                        <button
+                            onClick={onSaveSettings}
+                            className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 transition-colors"
+                        >
+                            Save Settings
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // The main header component for the application.
+        const Header = ({ selectedLocation, locationsData, setSelectedLocation, isLocationDropdownOpen, setIsLocationDropdownOpen, locationDropdownRef, setDataType, dataType, handleIconClick, rotatingButton, setIsDarkMode, isDarkMode, showIndicators, setShowIndicators, onCustomizeClick, onSettingsClick }) => (
             <header className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3 bg-white dark:bg-gray-900 sticky top-0 z-20">
                  <div className="flex items-center gap-6">
                     <div className="group flex items-center gap-3 cursor-pointer">
@@ -569,7 +790,7 @@
                         labelRight="Past"
                     />
                     <div className="flex items-center gap-2">
-                        <div className="relative group">
+                         <div className="relative group">
                              <button onClick={onCustomizeClick} className={`flex items-center justify-center rounded-full h-10 w-10 transition-all duration-100 active:scale-90 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 ${rotatingButton === 'customize' ? 'animate-jiggle' : ''}`}>
                                 <EyeIcon size={20} />
                             </button>
@@ -582,7 +803,7 @@
                             <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none">Toggle Thresholds</span>
                          </div>
                          <div className="relative group">
-                            <button onClick={() => { handleIconClick('settings'); setActiveTab(activeTab === 'Settings' ? 'Parameters' : 'Settings'); }} className={`flex items-center justify-center rounded-full h-10 w-10 transition-all duration-100 active:scale-90 ${activeTab === 'Settings' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200'} hover:bg-gray-200 dark:hover:bg-gray-600 ${rotatingButton === 'settings' ? 'animate-rotate' : ''}`}>
+                            <button onClick={onSettingsClick} className={`flex items-center justify-center rounded-full h-10 w-10 transition-all duration-100 active:scale-90 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 ${rotatingButton === 'settings' ? 'animate-rotate' : ''}`}>
                                 <SettingsIcon size={20} />
                             </button>
                             <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none">Settings</span>
@@ -597,6 +818,8 @@
                 </div>
             </header>
         );
+
+        // Component for filtering alerts by parameter type.
         const AlertsFilter = ({ activeFilter, onFilterChange }) => {
             const filters = ['All', 'pH', 'Turbidity', 'TDS'];
             return (
@@ -618,6 +841,47 @@
             );
         };
 
+        const TimeRangeSelector = ({ selectedRange, onRangeChange }) => {
+            const [isOpen, setIsOpen] = useState(false);
+            const ranges = ['Last 1 Hour', 'Last 6 Hours', 'Last 24 Hours', 'Last 7 Days', 'Last 30 Days'];
+            const dropdownRef = useRef(null);
+            useClickOutside(dropdownRef, () => setIsOpen(false));
+
+            const handleSelect = (range) => {
+                onRangeChange(range);
+                setIsOpen(false);
+            }
+
+            return (
+                <div className="mb-6 px-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Time Range:</label>
+                    <div className="relative w-full max-w-xs" ref={dropdownRef}>
+                        <button
+                            onClick={() => setIsOpen(!isOpen)}
+                            className="relative w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 text-left flex justify-between items-center"
+                        >
+                            <span>{selectedRange}</span>
+                            <ChevronDownIcon size={16} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        <div className={`absolute top-full left-0 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 overflow-hidden transition-all duration-200 ease-out ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
+                             style={{transformOrigin: 'top'}}>
+                            <ul className="p-1">
+                                {ranges.map(range => (
+                                    <li
+                                        key={range}
+                                        onClick={() => handleSelect(range)}
+                                        className="block rounded-md px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                                    >
+                                        {range}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
 
         // --- Main App Component ---
         function App() {
@@ -626,29 +890,49 @@
             const [selectedLocation, setSelectedLocation] = useState('Faculty of Engineering');
             const [activeTab, setActiveTab] = useState('Parameters');
             const [dataType, setDataType] = useState('Current');
+            const [pastTimeRange, setPastTimeRange] = useState('Last 24 Hours');
             const [isDarkMode, setIsDarkMode] = useState(false);
             const [selectedReport, setSelectedReport] = useState(null);
             const [isGeneratingReport, setIsGeneratingReport] = useState(false);
             const [showIndicators, setShowIndicators] = useState(true);
             const [alertFilter, setAlertFilter] = useState('All');
             const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
+
+            // States for settings
+            const [settings, setSettings] = useState({
+                autoRefresh: true,
+                emailNotifications: false,
+                smsAlerts: false,
+                phMin: 6.5,
+                phMax: 8.5,
+                turbidityMax: 5.0,
+                tdsMax: 500.0,
+            });
+
             // UI State
             const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
             const [rotatingButton, setRotatingButton] = useState(null);
-            const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
-            const [visibleParameters, setVisibleParameters] = useState(() => {
+
+             const [visibleParameters, setVisibleParameters] = useState(() => {
                 const initialVisibility = {};
                 initialData['Faculty of Engineering'].current.parameters.forEach(p => {
                     initialVisibility[p.name] = true;
                 });
                 return initialVisibility;
             });
-            // Settings State
-            const [settings, setSettings] = useState({ autoRefresh: true, emailNotifications: false, smsAlerts: false });
-            const [thresholds, setThresholds] = useState({ phMin: 6.5, phMax: 8.5, turbidityMax: 5, tdsMax: 500 });
 
+            // Refs for DOM elements
             const locationDropdownRef = useRef(null);
             useClickOutside(locationDropdownRef, () => setIsLocationDropdownOpen(false));
+
+            const handleSettingChange = (key, value) => {
+                setSettings(prev => ({ ...prev, [key]: value }));
+            };
+
+            const handleSaveSettings = () => {
+                console.log("Settings saved:", settings);
+                // In a real application, you would persist these settings
+            };
 
             const handleViewReport = async (baseReport) => {
                 setIsGeneratingReport(true);
@@ -660,22 +944,26 @@
                     const startTime = isPastReport
                         ? new Date(now.getTime() - 24 * 60 * 60 * 1000)
                         : new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                    const url = `https://api.thingspeak.com/channels/${thingSpeakConfig.channelId}/feeds.json?api_key=${thingSpeakConfig.apiKey}&start=${formatDateTimeForAPI(startTime)}&end=${formatDateTimeForAPI(now)}&results=8000`;
+
+                    const url = `https://api.thingspeak.com/channels/${thingSpeakConfig.channelId}/feeds.json?api_key=${thingSpeakConfig.apiKey}&start=${formatDateTimeForAPI(startTime)}` + (isPastReport ? `&results=8000` : `&results=40`);
 
                     const response = await fetch(url);
                     if (!response.ok) throw new Error('Network response was not ok');
                     const data = await response.json();
                     const feeds = data.feeds;
 
+                    const friendlyPeriod = `${formatFriendlyDateTime(startTime)} to ${formatFriendlyDateTime(now)}`;
+
                     if (!feeds || feeds.length === 0) {
-                        setSelectedReport({ ...baseReport, period: `(${formatDateTimeForAPI(startTime)} to ${formatDateTimeForAPI(now)})`, sensors: 'Faculty of Engineering', summary: [], alertSummary: ['No data available for this period.'], });
+                        setSelectedReport({ ...baseReport, period: friendlyPeriod, sensors: selectedLocation, summary: [], alertSummary: ['No data available for this period.'], detailedAlerts: [], history: {} });
                         return;
                     }
 
                     const paramKeys = Object.values(thingSpeakConfig.fieldMapping);
                     const reportSummary = paramKeys.map(paramName => {
                         const fieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === paramName);
-                        if (!fieldKey) return param;
+                        if (!fieldKey) return { param: paramName, avg: 'N/A', min: 'N/A', max: 'N/A', unit: '' };
+
                         const values = feeds.map(feed => parseFloat(feed[fieldKey])).filter(v => !isNaN(v));
 
                         if (values.length === 0) return { param: paramName, avg: 'N/A', min: 'N/A', max: 'N/A', unit: '' };
@@ -689,31 +977,69 @@
                         return { param: paramName, avg, min, max, unit: ` ${unit}` };
                     });
 
-                    const alertSummary = [];
-                    feeds.forEach(feed => {
-                        const phValue = parseFloat(feed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'pH')]);
-                        const turbidityValue = parseFloat(feed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'Turbidity')]);
-
-                        if (!isNaN(phValue) && (phValue < thresholds.phMin || phValue > thresholds.phMax)) {
-                             alertSummary.push(`Alert: pH level (${phValue.toFixed(2)}) was out of range (${thresholds.phMin}-${thresholds.phMax}).`);
+                    const reportHistory = {};
+                    paramKeys.forEach(paramName => {
+                        const fieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === paramName);
+                        if (!fieldKey) {
+                            reportHistory[paramName] = [];
+                            return;
                         }
-                        if (!isNaN(turbidityValue) && turbidityValue > thresholds.turbidityMax) {
-                            alertSummary.push(`Alert: High turbidity (${turbidityValue.toFixed(2)} NTU) detected on ${formatDate(new Date(feed.created_at))}.`);
+                        const fullHistory = feeds.map(feed => ({ value: parseFloat(feed[fieldKey]), time: feed.created_at })).filter(point => !isNaN(point.value) && point.value !== null);
+                        const sampledHistory = downsampleData(fullHistory, 150);
+                        reportHistory[paramName] = sampledHistory;
+                    });
+
+                    const detailedAlerts = [];
+                    const alertCounts = { pH: 0, Turbidity: 0, TDS: 0 };
+
+                    feeds.forEach(feed => {
+                        const phFieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'pH');
+                        const phValue = phFieldKey ? parseFloat(feed[phFieldKey]) : NaN;
+                        if (!isNaN(phValue) && (phValue < settings.phMin || phValue > settings.phMax)) {
+                            detailedAlerts.push({ type: 'Warning', message: `pH level (${phValue.toFixed(2)}) was out of range (${settings.phMin}-${settings.phMax}).`, time: feed.created_at, severity: 'medium' });
+                            alertCounts.pH++;
+                        }
+
+                        const turbidityFieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'Turbidity');
+                        const turbidityValue = turbidityFieldKey ? parseFloat(feed[turbidityFieldKey]) : NaN;
+                        if (!isNaN(turbidityValue) && turbidityValue > settings.turbidityMax) {
+                            detailedAlerts.push({ type: 'Warning', message: `High turbidity: ${turbidityValue.toFixed(2)} NTU (Max: ${settings.turbidityMax}).`, time: feed.created_at, severity: 'medium' });
+                            alertCounts.Turbidity++;
+                        }
+
+                        const tdsFieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'TDS');
+                        const tdsValue = tdsFieldKey ? parseFloat(feed[tdsFieldKey]) : NaN;
+                        if (!isNaN(tdsValue) && tdsValue > settings.tdsMax) {
+                            detailedAlerts.push({ type: 'Warning', message: `High TDS: ${tdsValue.toFixed(2)} ppm (Max: ${settings.tdsMax}).`, time: feed.created_at, severity: 'high' });
+                            alertCounts.TDS++;
                         }
                     });
-                    const uniqueAlerts = [...new Set(alertSummary)];
-                    setSelectedReport({ ...baseReport, period: `(${formatDateTimeForAPI(startTime)} to ${formatDateTimeForAPI(now)})`, sensors: 'Faculty of Engineering', summary: reportSummary, alertSummary: uniqueAlerts.length > 0 ? uniqueAlerts : ['No alerts recorded during this period.'], });
+
+                    const alertSummaryLines = [];
+                    let totalAlerts = 0;
+                    for (const param in alertCounts) {
+                        if (alertCounts[param] > 0) {
+                            alertSummaryLines.push(`${alertCounts[param]} ${param} alert${alertCounts[param] > 1 ? 's' : ''} recorded.`);
+                            totalAlerts += alertCounts[param];
+                        }
+                    }
+
+                    if (totalAlerts === 0) {
+                        alertSummaryLines.push('No alerts recorded during this period.');
+                    }
+
+                    setSelectedReport({ ...baseReport, period: friendlyPeriod, sensors: selectedLocation, summary: reportSummary, alertSummary: alertSummaryLines, detailedAlerts: detailedAlerts, history: reportHistory });
                 } catch (error) {
                     console.error("Failed to generate report:", error);
-                    setSelectedReport({ ...baseReport, summary: [], alertSummary: ['Error generating report. Could not fetch data.'], });
+                     setSelectedReport({ ...baseReport, summary: [], alertSummary: ['Error generating report. Could not fetch data.'], detailedAlerts: [], history: {} });
                 } finally {
                     setIsGeneratingReport(false);
                 }
             };
-            // Effect for fetching CURRENT data
+
             useEffect(() => {
                 const fetchCurrentData = async () => {
-                    if (dataType !== 'Current' || !settings.autoRefresh) return;
+                    if (dataType !== 'Current') return;
                     const url = `https://api.thingspeak.com/channels/${thingSpeakConfig.channelId}/feeds.json?api_key=${thingSpeakConfig.apiKey}&results=40`;
 
                     try {
@@ -729,6 +1055,7 @@
                                 if (!fieldKey) return param;
 
                                 const history = feeds.map(feed => ({ value: parseFloat(feed[fieldKey]), time: feed.created_at })).filter(point => !isNaN(point.value) && point.value !== null);
+
                                 if (history.length > 0) {
                                     const newValue = history[history.length - 1].value;
                                     const prevValue = history.length > 1 ? history[history.length - 2].value : newValue;
@@ -740,17 +1067,21 @@
 
                             const latestFeed = feeds[feeds.length - 1];
                             const newPotentialAlerts = [];
-                            const phValue = parseFloat(latestFeed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'pH')]);
-                            const turbidityValue = parseFloat(latestFeed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'Turbidity')]);
-                            const tdsValue = parseFloat(latestFeed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'TDS')]);
-                            if (!isNaN(phValue) && (phValue < thresholds.phMin || phValue > thresholds.phMax)) {
-                                newPotentialAlerts.push({ type: 'Warning', message: `pH level (${phValue.toFixed(2)}) is out of range (${thresholds.phMin}-${thresholds.phMax}).`, time: latestFeed.created_at, severity: 'medium' });
+                            const phFieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'pH');
+                            const phValue = phFieldKey ? parseFloat(latestFeed[phFieldKey]) : NaN;
+                            const turbidityFieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'Turbidity');
+                            const turbidityValue = turbidityFieldKey ? parseFloat(latestFeed[turbidityFieldKey]) : NaN;
+                            const tdsFieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'TDS');
+                            const tdsValue = tdsFieldKey ? parseFloat(latestFeed[tdsFieldKey]) : NaN;
+
+                            if (!isNaN(phValue) && (phValue < settings.phMin || phValue > settings.phMax)) {
+                                newPotentialAlerts.push({ type: 'Warning', message: `pH level (${phValue.toFixed(2)}) is out of range (${settings.phMin}-${settings.phMax}).`, time: latestFeed.created_at, severity: 'medium' });
                             }
-                            if (!isNaN(turbidityValue) && turbidityValue > thresholds.turbidityMax) {
-                                newPotentialAlerts.push({ type: 'Warning', message: `High turbidity: ${turbidityValue.toFixed(2)} NTU (Max: ${thresholds.turbidityMax}).`, time: latestFeed.created_at, severity: 'medium' });
+                            if (!isNaN(turbidityValue) && turbidityValue > settings.turbidityMax) {
+                                newPotentialAlerts.push({ type: 'Warning', message: `High turbidity: ${turbidityValue.toFixed(2)} NTU (Max: ${settings.turbidityMax}).`, time: latestFeed.created_at, severity: 'medium' });
                             }
-                            if (!isNaN(tdsValue) && tdsValue > thresholds.tdsMax) {
-                                newPotentialAlerts.push({ type: 'Warning', message: `High TDS: ${tdsValue.toFixed(2)} ppm (Max: ${thresholds.tdsMax}).`, time: latestFeed.created_at, severity: 'high' });
+                            if (!isNaN(tdsValue) && tdsValue > settings.tdsMax) {
+                                newPotentialAlerts.push({ type: 'Warning', message: `High TDS: ${tdsValue.toFixed(2)} ppm (Max: ${settings.tdsMax}).`, time: latestFeed.created_at, severity: 'high' });
                             }
 
                             setLocationsData(prevData => {
@@ -776,18 +1107,42 @@
                         console.error("Failed to fetch ThingSpeak data:", error);
                     }
                 };
-                const intervalId = setInterval(fetchCurrentData, 20000);
-                fetchCurrentData();
-                return () => clearInterval(intervalId);
-            }, [selectedLocation, dataType, thresholds, settings.autoRefresh]);
-            // Effect for fetching PAST data
+                
+                if (settings.autoRefresh) {
+                    const intervalId = setInterval(fetchCurrentData, 20000); 
+                    fetchCurrentData();
+                    return () => clearInterval(intervalId);
+                } else {
+                    fetchCurrentData();
+                }
+            }, [selectedLocation, dataType, settings.autoRefresh, settings.phMin, settings.phMax, settings.turbidityMax, settings.tdsMax]);
+
             useEffect(() => {
                 const fetchPastData = async () => {
                     if (dataType !== 'Past') return;
 
                     const now = new Date();
-                    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-                    const url = `https://api.thingspeak.com/channels/${thingSpeakConfig.channelId}/feeds.json?api_key=${thingSpeakConfig.apiKey}&start=${formatDateTimeForAPI(yesterday)}&end=${formatDateTimeForAPI(now)}&results=8000`;
+                    let startTime;
+                    switch (pastTimeRange) {
+                        case 'Last 1 Hour':
+                            startTime = new Date(now.getTime() - 1 * 60 * 60 * 1000);
+                            break;
+                        case 'Last 6 Hours':
+                             startTime = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+                            break;
+                        case 'Last 7 Days':
+                             startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            break;
+                        case 'Last 30 Days':
+                             startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                            break;
+                        case 'Last 24 Hours':
+                        default:
+                            startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                            break;
+                    }
+
+                    const url = `https://api.thingspeak.com/channels/${thingSpeakConfig.channelId}/feeds.json?api_key=${thingSpeakConfig.apiKey}&start=${formatDateTimeForAPI(startTime)}&end=${formatDateTimeForAPI(now)}&results=8000`;
 
                     try {
                         const response = await fetch(url);
@@ -796,32 +1151,35 @@
                         const feeds = data.feeds;
 
                         if (feeds && feeds.length > 0) {
-                            const pastParameters = initialData[selectedLocation].past['Last 24 Hours'].parameters.map(param => {
+                             const pastParameters = initialData[selectedLocation].past.parameters.map(param => {
                                 const fieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(key => thingSpeakConfig.fieldMapping[key] === param.name);
                                 if (!fieldKey) return param;
-                                const history = feeds.map(feed => ({ value: parseFloat(feed[fieldKey]), time: feed.created_at })).filter(point => !isNaN(point.value) && point.value !== null);
-                                const latestValue = history.length > 0 ? history[history.length - 1].value : '...';
-                                return { ...param, value: latestValue.toFixed ? latestValue.toFixed(2) : latestValue, history, change: '' };
+                                const fullHistory = feeds.map(feed => ({ value: parseFloat(feed[fieldKey]), time: feed.created_at })).filter(point => !isNaN(point.value) && point.value !== null);
+                                const sampledHistory = downsampleData(fullHistory, 150);
+                                const latestValue = sampledHistory.length > 0 ? sampledHistory[sampledHistory.length - 1].value : '...';
+                                return { ...param, value: latestValue.toFixed ? latestValue.toFixed(2) : latestValue, history: sampledHistory, change: '' };
                             });
 
                             const pastAlerts = [];
                             feeds.forEach(feed => {
-                                const phValue = parseFloat(feed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'pH')]);
-                                const turbidityValue = parseFloat(feed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'Turbidity')]);
-                                const tdsValue = parseFloat(feed[Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'TDS')]);
-
-                                if (!isNaN(phValue) && (phValue < thresholds.phMin || phValue > thresholds.phMax)) {
+                                const phFieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'pH');
+                                const phValue = phFieldKey ? parseFloat(feed[phFieldKey]) : NaN;
+                                if (!isNaN(phValue) && (phValue < settings.phMin || phValue > settings.phMax)) {
                                     pastAlerts.push({ id: `past-ph-${feed.entry_id}`, type: 'Warning', message: `pH level (${phValue.toFixed(2)}) was out of range.`, time: feed.created_at, severity: 'medium' });
                                 }
-                                if (!isNaN(turbidityValue) && turbidityValue > thresholds.turbidityMax) {
-                                    pastAlerts.push({ id: `past-turbidity-${feed.entry_id}`, type: 'Warning', message: `High turbidity: ${turbidityValue.toFixed(2)} NTU.`, time: feed.created_at, severity: 'medium' });
+                                const turbidityFieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'Turbidity');
+                                const turbidityValue = turbidityFieldKey ? parseFloat(feed[turbidityFieldKey]) : NaN;
+                                if (!isNaN(turbidityValue) && turbidityValue > settings.turbidityMax) {
+                                     pastAlerts.push({ id: `past-turbidity-${feed.entry_id}`, type: 'Warning', message: `High turbidity: ${turbidityValue.toFixed(2)} NTU.`, time: feed.created_at, severity: 'medium' });
                                 }
-                                if (!isNaN(tdsValue) && tdsValue > thresholds.tdsMax) {
-                                    pastAlerts.push({ id: `past-tds-${feed.entry_id}`, type: 'Warning', message: `High TDS: ${tdsValue.toFixed(2)} ppm.`, time: feed.created_at, severity: 'high' });
+                                const tdsFieldKey = Object.keys(thingSpeakConfig.fieldMapping).find(k => thingSpeakConfig.fieldMapping[k] === 'TDS');
+                                const tdsValue = tdsFieldKey ? parseFloat(feed[tdsFieldKey]) : NaN;
+                                 if (!isNaN(tdsValue) && tdsValue > settings.tdsMax) {
+                                     pastAlerts.push({ id: `past-tds-${feed.entry_id}`, type: 'Warning', message: `High TDS: ${tdsValue.toFixed(2)} ppm.`, time: feed.created_at, severity: 'high' });
                                 }
                             });
-                            if(pastAlerts.length === 0){
-                                pastAlerts.push({ id: `past-info-${Date.now()}`, type: 'Info', message: 'No alerts recorded in the past 24 hours.', time: new Date().toISOString(), severity: 'low' });
+                             if(pastAlerts.length === 0){
+                                pastAlerts.push({ id: `past-info-${Date.now()}`, type: 'Info', message: `No alerts recorded in the ${pastTimeRange.toLowerCase()}.`, time: new Date().toISOString(), severity: 'low' });
                             }
 
                             setLocationsData(prev => ({
@@ -829,11 +1187,21 @@
                                 [selectedLocation]: {
                                     ...prev[selectedLocation],
                                     past: {
-                                        'Last 24 Hours': {
-                                            ...prev[selectedLocation].past['Last 24 Hours'],
-                                            parameters: pastParameters,
-                                            alerts: pastAlerts.reverse(), // Show most recent past alerts first
-                                        }
+                                        ...prev[selectedLocation].past,
+                                        parameters: pastParameters,
+                                        alerts: pastAlerts.reverse(),
+                                    }
+                                }
+                            }));
+                        } else {
+                             setLocationsData(prev => ({
+                                ...prev,
+                                [selectedLocation]: {
+                                    ...prev[selectedLocation],
+                                    past: {
+                                        ...prev[selectedLocation].past,
+                                        parameters: initialData[selectedLocation].past.parameters.map(p => ({...p, value: 'N/A', history: []})),
+                                        alerts: [{ id: `past-info-empty-${Date.now()}`, type: 'Info', message: `No data available for the ${pastTimeRange.toLowerCase()}.`, time: new Date().toISOString(), severity: 'low' }],
                                     }
                                 }
                             }));
@@ -844,26 +1212,17 @@
                 };
 
                 fetchPastData();
-            }, [dataType, selectedLocation, thresholds]);
-
+            }, [dataType, selectedLocation, pastTimeRange, settings.phMin, settings.phMax, settings.turbidityMax, settings.tdsMax]);
 
             useEffect(() => {
                 document.documentElement.classList.toggle('dark', isDarkMode);
             }, [isDarkMode]);
+
             const handleIconClick = (buttonName) => {
                 setRotatingButton(buttonName);
                 setTimeout(() => setRotatingButton(null), 500);
             };
 
-            const handleSaveSettings = () => {
-                setShowSaveConfirmation(true);
-                setTimeout(() => setShowSaveConfirmation(false), 3000);
-            };
-
-            const handleThresholdChange = (e) => {
-                const { name, value } = e.target;
-                setThresholds(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
-            };
             const handleCloseAlert = (alertId) => {
                 setLocationsData(prevData => {
                     const updatedAlerts = prevData[selectedLocation].current.alerts.filter(alert => alert.id !== alertId);
@@ -888,7 +1247,7 @@
 
             const dataForLocation = locationsData[selectedLocation];
             const isCurrent = dataType === 'Current';
-            const activeData = isCurrent ? dataForLocation.current : (dataForLocation.past['Last 24 Hours'] || {});
+            const activeData = isCurrent ? dataForLocation.current : dataForLocation.past;
             const parameters = activeData.parameters || [];
             const alerts = activeData.alerts || [];
             const reports = activeData.reports || [];
@@ -897,7 +1256,6 @@
                 if (alertFilter === 'All' || alerts.length === 0) {
                     return alerts;
                 }
-                 // Don't filter out the default "no alerts" message
                 if (alerts.length === 1 && alerts[0].severity === 'low') {
                     return alerts;
                 }
@@ -905,17 +1263,39 @@
                     alert.message.toLowerCase().includes(alertFilter.toLowerCase())
                 );
             }, [alerts, alertFilter]);
+
+
             return (
-                <div className="bg-gray-50 dark:bg-gray-950 min-h-screen">
-                    <Header {...{ selectedLocation, locationsData, setSelectedLocation, isLocationDropdownOpen, setIsLocationDropdownOpen, locationDropdownRef, setDataType, dataType, setActiveTab, activeTab, handleIconClick, rotatingButton, setIsDarkMode, isDarkMode, showIndicators, setShowIndicators, onCustomizeClick: () => { handleIconClick('customize'); setIsCustomizeModalOpen(true); } }} />
+                <div className="min-h-screen">
+                    <Header
+                        selectedLocation={selectedLocation}
+                        locationsData={locationsData}
+                        setSelectedLocation={setSelectedLocation}
+                        isLocationDropdownOpen={isLocationDropdownOpen}
+                        setIsLocationDropdownOpen={setIsLocationDropdownOpen}
+                        locationDropdownRef={locationDropdownRef}
+                        setDataType={setDataType}
+                        dataType={dataType}
+                        handleIconClick={handleIconClick}
+                        rotatingButton={rotatingButton}
+                        setIsDarkMode={setIsDarkMode}
+                        isDarkMode={isDarkMode}
+                        showIndicators={showIndicators}
+                        setShowIndicators={setShowIndicators}
+                        onCustomizeClick={() => { handleIconClick('customize'); setIsCustomizeModalOpen(true); }}
+                        onSettingsClick={() => {
+                            handleIconClick('settings');
+                            setActiveTab(prevTab => prevTab === 'Settings' ? 'Parameters' : 'Settings');
+                        }}
+                    />
                     <main className="flex-1 px-4 sm:px-6 lg:px-10 py-5">
                         <div className="w-full max-w-7xl mx-auto">
                             <h1 className="text-gray-900 dark:text-white text-3xl font-bold p-4">Water Quality Monitoring</h1>
 
                             <div className="border-b border-gray-300 dark:border-gray-700 px-4">
                                 <nav className="flex gap-8">
-                                    {['Parameters', 'Alerts', 'Reports'].map((tab) => (
-                                         <button key={tab} onClick={() => setActiveTab(tab)} className={`relative group pb-4 pt-4 text-sm font-bold transition-colors ${activeTab === tab ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'}`}>
+                                    {['Parameters', 'Alerts', 'Reports', 'Settings'].map((tab) => (
+                                        <button key={tab} onClick={() => setActiveTab(tab)} className={`relative group pb-4 pt-4 text-sm font-bold transition-colors ${activeTab === tab ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'}`}>
                                             <span>{tab}</span>
                                             <span className={`absolute bottom-0 left-0 h-0.5 bg-blue-500 dark:bg-blue-400 transition-all duration-300 ${activeTab === tab ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
                                          </button>
@@ -924,41 +1304,44 @@
                             </div>
 
                             <div className="py-6">
-                                {activeTab === 'Parameters' && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 px-4">
-                                        {parameters
-                                            .filter(param => visibleParameters[param.name])
-                                            .map((param, index) => {
-                                            let paramThresholds = {};
-                                            switch (param.name) {
-                                                case 'pH':
-                                                    paramThresholds = { min: thresholds.phMin, max: thresholds.phMax };
-                                                    break;
-                                                case 'Turbidity':
-                                                    paramThresholds = { max: thresholds.turbidityMax };
-                                                    break;
-                                                case 'TDS':
-                                                    paramThresholds = { max: thresholds.tdsMax };
-                                                    break;
-                                            }
-                                            return (
-                                            <div key={param.name} className="flex flex-col gap-2 rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800 shadow-sm animate-fadeInUp" style={{animationDelay: `${index * 100}ms`}}>
-                                                <p className="text-gray-900 dark:text-gray-100 font-medium">{param.name}</p>
-                                                <p className="text-gray-900 dark:text-white text-3xl font-bold">{param.value}{param.unit && ` ${param.unit}`}</p>
-                                                {isCurrent && <div className="flex gap-1 text-sm">
-                                                    <p className="text-gray-500 dark:text-gray-400">vs previous reading</p>
-                                                    <p className={`font-medium ${param.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{param.change}</p>
-                                                </div>}
-                                                <ChartSVG data={param.history} isDarkMode={isDarkMode} unit={param.unit} thresholds={paramThresholds} showIndicators={showIndicators} />
-                                            </div>
-                                        )})}
-                                    </div>
+                                 {activeTab === 'Parameters' && (
+                                     <div>
+                                        {dataType === 'Past' && <TimeRangeSelector selectedRange={pastTimeRange} onRangeChange={setPastTimeRange} />}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 px-4">
+                                            {parameters
+                                                .filter(param => visibleParameters[param.name])
+                                                .map((param, index) => {
+                                               let paramThresholds = {};
+                                                switch (param.name) {
+                                                    case 'pH':
+                                                        paramThresholds = { min: settings.phMin, max: settings.phMax };
+                                                        break;
+                                                    case 'Turbidity':
+                                                        paramThresholds = { max: settings.turbidityMax };
+                                                        break;
+                                                    case 'TDS':
+                                                        paramThresholds = { max: settings.tdsMax };
+                                                        break;
+                                                }
+                                                return (
+                                                <div key={param.name} className="flex flex-col gap-2 rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800 shadow-sm animate-fadeInUp" style={{animationDelay: `${index * 100}ms`}}>
+                                                    <p className="text-gray-900 dark:text-gray-100 font-medium">{param.name}</p>
+                                                    <p className="text-gray-900 dark:text-white text-3xl font-bold">{param.value}{param.unit && ` ${param.unit}`}</p>
+                                                    {isCurrent && <div className="flex gap-1 text-sm">
+                                                        <p className="text-gray-500 dark:text-gray-400">vs previous reading</p>
+                                                        <p className={`font-medium ${param.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{param.change}</p>
+                                                    </div>}
+                                                    <ChartSVG data={param.history} isDarkMode={isDarkMode} unit={param.unit} thresholds={paramThresholds} showIndicators={showIndicators} />
+                                                </div>
+                                            )})}
+                                        </div>
+                                     </div>
                                  )}
                                  {activeTab === 'Alerts' && (
                                      <div>
                                         <AlertsFilter activeFilter={alertFilter} onFilterChange={setAlertFilter} />
                                          <div className="px-4 space-y-4">
-                                            {filteredAlerts.length > 0 ? filteredAlerts.map((alert, index) => (
+                                             {filteredAlerts.length > 0 ? filteredAlerts.map((alert, index) => (
                                                  <div key={alert.id} className="flex items-start justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 animate-fadeInUp" style={{animationDelay: `${index * 50}ms`}}>
                                                      <div className="flex items-start gap-3">
                                                          <div className={`w-3 h-3 rounded-full flex-shrink-0 mt-1.5 ${alert.severity === 'high' ? 'bg-red-500' : alert.severity === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'}`}></div>
@@ -977,55 +1360,35 @@
                                                      </div>
                                                  </div>
                                              )) : <p className="text-center p-10 text-gray-500 dark:text-gray-400">No alerts match the filter.</p>}
-                                     </div>
+                                         </div>
                                      </div>
                                  )}
                                  {activeTab === 'Reports' && (
                                     <div className="px-4 space-y-4">
-                                        {reports.map((report, index) => (
+                                         {reports.map((report, index) => (
                                              <div key={index} className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 animate-fadeInUp" style={{animationDelay: `${index * 100}ms`}}>
                                                  <div>
                                                      <p className="text-gray-900 dark:text-gray-100 font-medium">{report.name}</p>
                                                      <p className="text-gray-600 dark:text-gray-300 text-sm">{report.status === 'Generated' ? `Generated on ${report.date}` : report.status}</p>
                                                  </div>
-                                                <button onClick={() => handleViewReport(report)} className="px-4 py-2 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-sm font-semibold rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+                                                  <button onClick={() => handleViewReport(report)} className="px-4 py-2 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-sm font-semibold rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
                                                     View Report
-                                                </button>
+                                                  </button>
                                              </div>
-                                        ))}
+                                         ))}
                                     </div>
                                  )}
                                  {activeTab === 'Settings' && (
-                                    <div className="px-4 max-w-2xl mx-auto animate-fadeInUp">
-                                        <div className="space-y-6">
-                                            <div className="p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                                                <h3 className="text-lg text-gray-900 dark:text-gray-100 font-medium mb-4">Monitoring Settings</h3>
-                                                <div className="space-y-4">
-                                                    <label className="flex items-center justify-between cursor-pointer"><span className="text-gray-700 dark:text-gray-300">Auto-refresh data</span><input type="checkbox" name="autoRefresh" checked={settings.autoRefresh} onChange={(e) => setSettings(p => ({...p, autoRefresh: e.target.checked}))} className="rounded text-blue-500 focus:ring-blue-500" /></label>
-                                                    <label className="flex items-center justify-between cursor-pointer"><span className="text-gray-700 dark:text-gray-300">Email notifications</span><input type="checkbox" name="emailNotifications" checked={settings.emailNotifications} onChange={(e) => setSettings(p => ({...p, emailNotifications: e.target.checked}))} className="rounded text-blue-500 focus:ring-blue-500" /></label>
-                                                    <label className="flex items-center justify-between cursor-pointer"><span className="text-gray-700 dark:text-gray-300">SMS alerts</span><input type="checkbox" name="smsAlerts" checked={settings.smsAlerts} onChange={(e) => setSettings(p => ({...p, smsAlerts: e.target.checked}))} className="rounded text-blue-500 focus:ring-blue-500" /></label>
-                                                </div>
-                                            </div>
-                                            <div className="p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                                                <h3 className="text-lg text-gray-900 dark:text-gray-100 font-medium mb-4">Threshold Values</h3>
-                                                <div className="space-y-4">
-                                                    <div className="flex items-center justify-between"><span className="text-gray-700 dark:text-gray-300">pH Min/Max</span><div className="flex gap-2"><input type="number" step="0.1" name="phMin" value={thresholds.phMin} onChange={handleThresholdChange} className="w-24 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" /><input type="number" step="0.1" name="phMax" value={thresholds.phMax} onChange={handleThresholdChange} className="w-24 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div></div>
-                                                    <div className="flex items-center justify-between"><span className="text-gray-700 dark:text-gray-300">Turbidity Max (NTU)</span><input type="number" step="0.1" name="turbidityMax" value={thresholds.turbidityMax} onChange={handleThresholdChange} className="w-24 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
-                                                    <div className="flex items-center justify-between"><span className="text-gray-700 dark:text-gray-300">TDS Max (ppm)</span><input type="number" name="tdsMax" value={thresholds.tdsMax} onChange={handleThresholdChange} className="w-24 px-2 py-1 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
-                                                </div>
-                                            </div>
-                                            <div className="relative pt-2">
-                                                <button onClick={handleSaveSettings} className="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition-colors">Save Settings</button>
-                                                {showSaveConfirmation && (<div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-max px-4 py-2 bg-gray-900 text-white text-sm rounded-md transition-opacity duration-300 animate-fadeInUp">Settings saved successfully!</div>)}
-                                            </div>
-                                        </div>
-                                    </div>
+                                     <SettingsTab
+                                         settings={settings}
+                                         onSettingChange={handleSettingChange}
+                                         onSaveSettings={handleSaveSettings}
+                                     />
                                  )}
                             </div>
-
                         </div>
                     </main>
-                    {selectedReport && <ReportModal report={selectedReport} onClose={() => setSelectedReport(null)} isGenerating={isGeneratingReport} />}
+                    {selectedReport && <ReportModal report={selectedReport} onClose={() => setSelectedReport(null)} isGenerating={isGeneratingReport} isDarkMode={isDarkMode} selectedLocation={selectedLocation} showIndicators={showIndicators} thresholds={settings} />}
                     <CustomizeModal
                         isOpen={isCustomizeModalOpen}
                         onClose={() => setIsCustomizeModalOpen(false)}
@@ -1037,7 +1400,10 @@
             );
         }
 
+        // Mount the React application to the DOM
         ReactDOM.render(<App />, document.getElementById('root'));
+
     </script>
+
 </body>
 </html>
